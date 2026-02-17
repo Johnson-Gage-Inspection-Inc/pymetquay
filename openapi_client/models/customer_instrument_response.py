@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import pprint
 import re  # noqa: F401
-from datetime import date
+from datetime import date, datetime
 from typing import Any, ClassVar, Dict, List, Optional, Set, Union
 
 from pydantic import (BaseModel, ConfigDict, Field, StrictBool, StrictFloat,
@@ -230,6 +230,28 @@ class CustomerInstrumentResponse(BaseModel):
             raise ValueError(
                 "must be one of enum values ('DAY', 'WEEK', 'MONTH', 'YEAR')"
             )
+        return value
+
+    @field_validator(
+        "calibrated_date",
+        "due_date",
+        "verification_due_date",
+        "last_received_date",
+        "last_delivered_date",
+        "audited_date",
+        mode="before",
+    )
+    @classmethod
+    def _parse_date(cls, value):
+        """Parse MM-dd-yyyy date strings from the API."""
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            for fmt in ("%m-%d-%Y", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
         return value
 
     model_config = ConfigDict(

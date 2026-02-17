@@ -18,11 +18,11 @@ from __future__ import annotations
 import json
 import pprint
 import re  # noqa: F401
-from datetime import date
+from datetime import date, datetime
 from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from pydantic import (BaseModel, ConfigDict, Field, StrictBool, StrictInt,
-                      StrictStr)
+                      StrictStr, field_validator)
 from typing_extensions import Self
 
 
@@ -233,6 +233,30 @@ class WorkResponse(BaseModel):
         "workspace",
         "jobType",
     ]
+
+    @field_validator(
+        "in_date",
+        "delivery_date",
+        "work_date",
+        "due_date",
+        "finished_date",
+        "recommended_due_date",
+        "calibrated_date",
+        "work_start_date",
+        mode="before",
+    )
+    @classmethod
+    def _parse_date(cls, value):
+        """Parse MM-dd-yyyy date strings from the API."""
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            for fmt in ("%m-%d-%Y", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+        return value
 
     model_config = ConfigDict(
         populate_by_name=True,

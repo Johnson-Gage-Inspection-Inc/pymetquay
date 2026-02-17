@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "openapi_client"
-version = "1.0.0"
-description = "Metquay CRUD API"
+name = "pymetquay"
+version = "0.1.0"
+description = "Python SDK wrapper for the Metquay CRUD API"
 authors = ["Metquay API Support <support@metquay.atlassian.net>"]
 license = "Apache 2.0"
 readme = "README.md"
-repository = "https://github.com/GIT_USER_ID/GIT_REPO_ID"
-keywords = ["OpenAPI", "OpenAPI-Generator", "Metquay CRUD API"]
+keywords = ["OpenAPI", "Metquay", "calibration", "SDK"]
+packages = [{include = "openapi_client"}, {include = "pymetquay"}]
 include = ["openapi_client/py.typed"]
 
 [tool.poetry.dependencies]
@@ -16,6 +16,7 @@ urllib3 = ">= 2.1.0, < 3.0.0"
 python-dateutil = ">= 2.8.2"
 pydantic = ">= 2"
 typing-extensions = ">= 4.7.1"
+python-dotenv = ">= 0.19.0"
 
 [tool.poetry.dev-dependencies]
 pytest = ">= 7.2.1"
@@ -36,6 +37,7 @@ extension-pkg-whitelist = "pydantic"
 [tool.mypy]
 files = [
   "openapi_client",
+  "pymetquay",
   #"test",  # auto-generated tests
   "tests", # hand-written tests
 ]
@@ -87,3 +89,6 @@ disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_reexport = true
 warn_return_any = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
