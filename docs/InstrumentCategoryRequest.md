@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.instrument_category_request import InstrumentCategoryRequest
+from pymetquay import InstrumentCategoryRequest
 
 # TODO update the JSON string below
 json = "{}"

@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.created_response import CreatedResponse
+from pymetquay import CreatedResponse
 
 # TODO update the JSON string below
 json = "{}"

@@ -1,4 +1,4 @@
-# openapi_client.AuthenticateApi
+# pymetquay.AuthenticateApi
 
 All URIs are relative to *https://metquayappurl.com/api/v1*
 
@@ -25,24 +25,24 @@ Authenticates client application using pre-provisioned access/secret keys.
 
 
 ```python
-import openapi_client
-from openapi_client.models.authentication_request import AuthenticationRequest
-from openapi_client.models.authentication_response import AuthenticationResponse
-from openapi_client.rest import ApiException
+import pymetquay
+from pymetquay.models.authentication_request import AuthenticationRequest
+from pymetquay.models.authentication_response import AuthenticationResponse
+from pymetquay.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = openapi_client.Configuration(
+configuration = pymetquay.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
 
 # Enter a context with an instance of the API client
-with openapi_client.ApiClient(configuration) as api_client:
+with pymetquay.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = openapi_client.AuthenticateApi(api_client)
-    authentication_request = openapi_client.AuthenticationRequest() # AuthenticationRequest | 
+    api_instance = pymetquay.AuthenticateApi(api_client)
+    authentication_request = pymetquay.AuthenticationRequest() # AuthenticationRequest | 
 
     try:
         # Authenticate and obtain access token

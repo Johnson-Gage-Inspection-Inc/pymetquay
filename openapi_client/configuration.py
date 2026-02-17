@@ -19,8 +19,7 @@ import logging
 import multiprocessing
 import sys
 from logging import FileHandler
-from typing import (Any, ClassVar, Dict, List, Literal, Optional, TypedDict,
-                    Union)
+from typing import Any, ClassVar, Dict, List, Literal, Optional, TypedDict, Union
 
 import urllib3
 from typing_extensions import NotRequired, Self
@@ -197,7 +196,9 @@ class Configuration:
         debug: Optional[bool] = None,
     ) -> None:
         """Constructor"""
-        self._base_path = "https://metquayappurl.com/api/v1" if host is None else host
+        self._base_path = (
+            "https://johnsongage.metquay.co/api/v1" if host is None else host
+        )
         """Default Base url
         """
         self.server_index = 0 if server_index is None and host is None else server_index
@@ -240,7 +241,7 @@ class Configuration:
         self.logger = {}
         """Logging Settings
         """
-        self.logger["package_logger"] = logging.getLogger("openapi_client")
+        self.logger["package_logger"] = logging.getLogger("pymetquay")
         self.logger["urllib3_logger"] = logging.getLogger("urllib3")
         self.logger_format = "%(asctime)s %(levelname)s %(message)s"
         """Log format
@@ -533,12 +534,12 @@ class Configuration:
         """
         return [
             {
-                "url": "https://{metquayappurl}/api/v1",
+                "url": "https://{metquayhost}/api/v1",
                 "description": "Customer-specific API server",
                 "variables": {
-                    "metquayappurl": {
-                        "description": "Metquay application URL(change this to your application URL)",
-                        "default_value": "metquayappurl.com",
+                    "metquayhost": {
+                        "description": "Metquay application host (change this to your application host)",
+                        "default_value": "johnsongage.metquay.co",
                     }
                 },
             }

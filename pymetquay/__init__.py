@@ -1,6 +1,17 @@
 """pymetquay - Convenience wrapper for the Metquay CRUD API."""
 
-from openapi_client.exceptions import ApiException
+from openapi_client.api.authenticate_api import AuthenticateApi
+from openapi_client.api.customerinstruments_api import CustomerinstrumentsApi
+from openapi_client.api.customers_api import CustomersApi
+from openapi_client.api.instrumentcategories_api import InstrumentcategoriesApi
+from openapi_client.api.works_api import WorksApi
+from openapi_client.api_client import ApiClient
+from openapi_client.api_response import ApiResponse
+from openapi_client.configuration import Configuration
+from openapi_client.exceptions import (ApiAttributeError, ApiException,
+                                       ApiKeyError, ApiTypeError,
+                                       ApiValueError, OpenApiException)
+from openapi_client.models.authentication_request import AuthenticationRequest
 from openapi_client.models.authentication_response import \
     AuthenticationResponse
 from openapi_client.models.created_response import CreatedResponse
@@ -21,6 +32,17 @@ from pymetquay.client import MetquayClient
 __all__ = [
     "MetquayClient",
     "__version__",
+    # API classes
+    "ApiClient",
+    "ApiResponse",
+    "Configuration",
+    "AuthenticateApi",
+    "CustomersApi",
+    "CustomerinstrumentsApi",
+    "InstrumentcategoriesApi",
+    "WorksApi",
+    # Models
+    "AuthenticationRequest",
     "AuthenticationResponse",
     "CreatedResponse",
     "CustomerInstrumentRequest",
@@ -31,5 +53,11 @@ __all__ = [
     "InstrumentCategoryRequest",
     "WorkRequest",
     "WorkResponse",
+    # Exceptions
     "ApiException",
+    "ApiAttributeError",
+    "ApiKeyError",
+    "ApiTypeError",
+    "ApiValueError",
+    "OpenApiException",
 ]
