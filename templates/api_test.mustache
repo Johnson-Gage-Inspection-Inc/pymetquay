@@ -1,6 +1,5 @@
 {{>partial_header}}
 
-import unittest
 from unittest.mock import MagicMock
 
 from {{packageName}}.api_client import ApiClient
@@ -9,56 +8,48 @@ from {{packageName}}.api_client import ApiClient
 from {{packageName}}.api.{{classFilename}} import {{classname}}
 
 
-class Test{{classname}}(unittest.TestCase):
+class Test{{classname}}:
     """{{classname}} unit tests"""
 
-    def setUp(self) -> None:
+    def setup_method(self):
+        """Set up test fixtures before each test method."""
         self.api_client = MagicMock(spec=ApiClient)
         self.api_client.select_header_accept.return_value = "application/json"
         self.api_client.select_header_content_type.return_value = "application/json"
         self.api = {{classname}}(api_client=self.api_client)
 
-    def tearDown(self) -> None:
-        pass
-
     # ------------------------------------------------------------------ #
     #  Instantiation
     # ------------------------------------------------------------------ #
-    def test_instantiation_with_mock_client(self) -> None:
+    def test_instantiation_with_mock_client(self):
         """{{classname}} can be created with a mock ApiClient."""
-        self.assertIsInstance(self.api, {{classname}})
-        self.assertIs(self.api.api_client, self.api_client)
+        assert isinstance(self.api, {{classname}})
+        assert self.api.api_client is self.api_client
 
     # ------------------------------------------------------------------ #
     #  Method existence
     # ------------------------------------------------------------------ #
 {{#operation}}
-    def test_has_{{operationId}}(self) -> None:
-        self.assertTrue(callable(getattr(self.api, "{{operationId}}", None)))
+    def test_has_{{operationId}}(self):
+        assert callable(getattr(self.api, "{{operationId}}", None))
 
 {{/operation}}
 
-    def test_has_with_http_info_variants(self) -> None:
+    def test_has_with_http_info_variants(self):
         for method in (
 {{#operation}}
             "{{operationId}}_with_http_info",
 {{/operation}}
         ):
-            self.assertTrue(
-                callable(getattr(self.api, method, None)),
-                f"{method} should exist",
-            )
+            assert callable(getattr(self.api, method, None)), f"{method} should exist"
 
-    def test_has_without_preload_content_variants(self) -> None:
+    def test_has_without_preload_content_variants(self):
         for method in (
 {{#operation}}
             "{{operationId}}_without_preload_content",
 {{/operation}}
         ):
-            self.assertTrue(
-                callable(getattr(self.api, method, None)),
-                f"{method} should exist",
-            )
+            assert callable(getattr(self.api, method, None)), f"{method} should exist"
 
 {{#operation}}
     # ------------------------------------------------------------------ #
@@ -87,93 +78,90 @@ class Test{{classname}}(unittest.TestCase):
         self.api._{{operationId}}_serialize(**defaults)
         return self.api_client.param_serialize.call_args.kwargs
 
-    def test_{{operationId}}_serialize_method_and_path(self) -> None:
+    def test_{{operationId}}_serialize_method_and_path(self):
         """_{{operationId}}_serialize uses {{httpMethod}} {{path}}."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["method"], "{{httpMethod}}")
-        self.assertEqual(kw["resource_path"], "{{path}}")
+        assert kw["method"] == "{{httpMethod}}"
+        assert kw["resource_path"] == "{{path}}"
 
 {{#hasAuthMethods}}
-    def test_{{operationId}}_serialize_bearer_auth(self) -> None:
+    def test_{{operationId}}_serialize_bearer_auth(self):
         """_{{operationId}}_serialize requires {{#authMethods}}{{name}}{{/authMethods}}."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["auth_settings"], [{{#authMethods}}"{{name}}"{{^-last}}, {{/-last}}{{/authMethods}}])
+        assert kw["auth_settings"] == [{{#authMethods}}"{{name}}"{{^-last}}, {{/-last}}{{/authMethods}}]
 {{/hasAuthMethods}}
 {{^hasAuthMethods}}
-    def test_{{operationId}}_serialize_no_auth(self) -> None:
+    def test_{{operationId}}_serialize_no_auth(self):
         """_{{operationId}}_serialize uses no auth."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["auth_settings"], [])
+        assert kw["auth_settings"] == []
 {{/hasAuthMethods}}
 
 {{#hasBodyParam}}
-    def test_{{operationId}}_serialize_body(self) -> None:
+    def test_{{operationId}}_serialize_body(self):
         """_{{operationId}}_serialize forwards the request body."""
         mock_body = MagicMock()
         kw = self._call_{{operationId}}_serialize({{#bodyParam}}{{paramName}}{{/bodyParam}}=mock_body)
-        self.assertIs(kw["body"], mock_body)
+        assert kw["body"] is mock_body
 {{/hasBodyParam}}
 {{^hasBodyParam}}
-    def test_{{operationId}}_serialize_no_body(self) -> None:
+    def test_{{operationId}}_serialize_no_body(self):
         """_{{operationId}}_serialize sends no body."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertIsNone(kw["body"])
+        assert kw["body"] is None
 {{/hasBodyParam}}
 
 {{#hasPathParams}}
-    def test_{{operationId}}_serialize_path_params(self) -> None:
+    def test_{{operationId}}_serialize_path_params(self):
         """_{{operationId}}_serialize passes path parameters."""
         kw = self._call_{{operationId}}_serialize(
 {{#pathParams}}
             {{paramName}}=99,
 {{/pathParams}}
         )
-        self.assertEqual(kw["path_params"], {
+        assert kw["path_params"] == {
 {{#pathParams}}
             "{{baseName}}": 99,
 {{/pathParams}}
-        })
+        }
 {{/hasPathParams}}
 {{^hasPathParams}}
-    def test_{{operationId}}_serialize_no_path_params(self) -> None:
+    def test_{{operationId}}_serialize_no_path_params(self):
         """_{{operationId}}_serialize has no path parameters."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["path_params"], {})
+        assert kw["path_params"] == {}
 {{/hasPathParams}}
 
 {{#hasQueryParams}}
-    def test_{{operationId}}_serialize_no_query_when_none(self) -> None:
+    def test_{{operationId}}_serialize_no_query_when_none(self):
         """Omits query params when all are None."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["query_params"], [])
+        assert kw["query_params"] == []
 
 {{#queryParams}}
-    def test_{{operationId}}_serialize_{{paramName}}(self) -> None:
+    def test_{{operationId}}_serialize_{{paramName}}(self):
         """Includes {{baseName}} query param."""
 {{#isInteger}}
         kw = self._call_{{operationId}}_serialize({{paramName}}=10)
-        self.assertIn(("{{baseName}}", 10), kw["query_params"])
+        assert ("{{baseName}}", 10) in kw["query_params"]
 {{/isInteger}}
 {{#isLong}}
         kw = self._call_{{operationId}}_serialize({{paramName}}=10)
-        self.assertIn(("{{baseName}}", 10), kw["query_params"])
+        assert ("{{baseName}}", 10) in kw["query_params"]
 {{/isLong}}
 {{#isString}}
         kw = self._call_{{operationId}}_serialize({{paramName}}="test_value")
-        self.assertIn(("{{baseName}}", "test_value"), kw["query_params"])
+        assert ("{{baseName}}", "test_value") in kw["query_params"]
 {{/isString}}
 
 {{/queryParams}}
 {{/hasQueryParams}}
 {{^hasQueryParams}}
-    def test_{{operationId}}_serialize_no_query_params(self) -> None:
+    def test_{{operationId}}_serialize_no_query_params(self):
         """_{{operationId}}_serialize has no query parameters."""
         kw = self._call_{{operationId}}_serialize()
-        self.assertEqual(kw["query_params"], [])
+        assert kw["query_params"] == []
 {{/hasQueryParams}}
 
 {{/operation}}
 {{/operations}}
-
-if __name__ == "__main__":
-    unittest.main()

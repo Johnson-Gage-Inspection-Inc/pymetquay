@@ -1,9 +1,6 @@
 {
     "python.terminal.useEnvFile": true,
     "python.testing.pytestEnabled": true,
-    "python.testing.unittestEnabled": true,
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
-    "python-envs.pythonProjects": []
+    "python.testing.unittestEnabled": false,
+    "testExplorer.useNativeTesting": false
 }

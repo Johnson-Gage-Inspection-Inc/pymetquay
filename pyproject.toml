@@ -91,4 +91,4 @@ no_implicit_reexport = true
 warn_return_any = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["test", "tests"]

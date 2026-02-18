@@ -4,6 +4,9 @@
 # Hand-written supplemental tests (date parsing, custom validators)
 test/test_*_custom.py
 
+# pytest test directories should not be packages
+test/__init__.py
+
 # Hand-modified model files (custom date validators)
 openapi_client/models/customer_instrument_response.py
 openapi_client/models/work_response.py

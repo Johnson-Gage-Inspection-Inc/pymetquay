@@ -1,7 +1,6 @@
 {{>partial_header}}
 
-import unittest
-
+import pytest
 from pydantic import ValidationError
 
 {{#models}}
@@ -9,7 +8,7 @@ from pydantic import ValidationError
 from {{packageName}}.models.{{classFilename}} import {{classname}}
 
 
-class Test{{classname}}(unittest.TestCase):
+class Test{{classname}}:
     """{{classname}} unit tests"""
 
 {{#hasRequired}}
@@ -34,7 +33,7 @@ class Test{{classname}}(unittest.TestCase):
 {{#requiredVars}}
 {{^isDate}}
 {{^isDateTime}}
-        self.assertEqual(obj.{{name}}, {{{example}}})
+        assert obj.{{name}} == {{{example}}}
 {{/isDateTime}}
 {{/isDate}}
 {{/requiredVars}}
@@ -44,7 +43,7 @@ class Test{{classname}}(unittest.TestCase):
     def test_construction_empty(self):
         """Test constructing {{classname}} with no arguments (all optional)."""
         obj = {{classname}}()
-        self.assertIsNotNone(obj)
+        assert obj is not None
 {{/hasRequired}}
 
     def test_full_construction(self):
@@ -58,7 +57,7 @@ class Test{{classname}}(unittest.TestCase):
 {{/isDate}}
 {{/vars}}
         )
-        self.assertIsNotNone(obj)
+        assert obj is not None
 
 {{#hasRequired}}
     def test_optional_fields_default_to_none(self):
@@ -68,7 +67,7 @@ class Test{{classname}}(unittest.TestCase):
 {{^defaultValue}}
 {{^isDate}}
 {{^isDateTime}}
-        self.assertIsNone(obj.{{name}})
+        assert obj.{{name}} is None
 {{/isDateTime}}
 {{/isDate}}
 {{/defaultValue}}
@@ -85,7 +84,7 @@ class Test{{classname}}(unittest.TestCase):
 {{/hasRequired}}
 {{#vars}}
 {{#defaultValue}}
-        self.assertEqual(obj.{{name}}, {{{defaultValue}}})
+        assert obj.{{name}} == {{{defaultValue}}}
 {{/defaultValue}}
 {{/vars}}
 
@@ -111,7 +110,7 @@ class Test{{classname}}(unittest.TestCase):
         )
 {{/hasRequired}}
         d = obj.to_dict()
-        self.assertIsInstance(d, dict)
+        assert isinstance(d, dict)
 
     def test_to_dict_excludes_none(self):
         """Test that to_dict() excludes fields that are None."""
@@ -124,7 +123,7 @@ class Test{{classname}}(unittest.TestCase):
         d = obj.to_dict()
 {{#optionalVars}}
 {{^defaultValue}}
-        self.assertNotIn("{{baseName}}", d)
+        assert "{{baseName}}" not in d
 {{/defaultValue}}
 {{/optionalVars}}
 
@@ -140,18 +139,18 @@ class Test{{classname}}(unittest.TestCase):
 {{/requiredVars}}
         }
         obj = {{classname}}.from_dict(data)
-        self.assertIsNotNone(obj)
+        assert obj is not None
 {{#requiredVars}}
 {{^isDate}}
 {{^isDateTime}}
-        self.assertEqual(obj.{{name}}, {{{example}}})
+        assert obj.{{name}} == {{{example}}}
 {{/isDateTime}}
 {{/isDate}}
 {{/requiredVars}}
 
     def test_from_dict_none_returns_none(self):
         """Test from_dict(None) returns None."""
-        self.assertIsNone({{classname}}.from_dict(None))
+        assert {{classname}}.from_dict(None) is None
 
     def test_to_json_and_from_json_roundtrip(self):
         """Test JSON serialization roundtrip."""
@@ -173,7 +172,7 @@ class Test{{classname}}(unittest.TestCase):
 {{/hasRequired}}
         json_str = obj.to_json()
         restored = {{classname}}.from_json(json_str)
-        self.assertIsNotNone(restored)
+        assert restored is not None
 
     # ------------------------------------------------------------------ #
     #  Validation
@@ -184,7 +183,7 @@ class Test{{classname}}(unittest.TestCase):
     def test_missing_{{name}}_raises(self):
         """Test that missing required '{{name}}' raises ValidationError."""
         kwargs = {k: v for k, v in self._REQUIRED_KWARGS.items() if k != "{{name}}"}
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             {{classname}}(**kwargs)
 
 {{/isDateTime}}
@@ -194,7 +193,7 @@ class Test{{classname}}(unittest.TestCase):
 {{#isEnum}}
     def test_enum_{{name}}_invalid_value_raises(self):
         """Test invalid enum value for {{name}} raises ValidationError."""
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             {{classname}}(
 {{#hasRequired}}
                 **self._REQUIRED_KWARGS,
@@ -206,6 +205,3 @@ class Test{{classname}}(unittest.TestCase):
 {{/vars}}
 {{/model}}
 {{/models}}
-
-if __name__ == "__main__":
-    unittest.main()
