@@ -40,5 +40,4 @@ openapi_client/py.typed
 openapi_client/rest.py
 setup.cfg
 test-requirements.txt
-test/__init__.py
 tox.ini
