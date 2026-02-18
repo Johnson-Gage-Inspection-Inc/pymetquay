@@ -1,0 +1,211 @@
+{{>partial_header}}
+
+import unittest
+
+from pydantic import ValidationError
+
+{{#models}}
+{{#model}}
+from {{packageName}}.models.{{classFilename}} import {{classname}}
+
+
+class Test{{classname}}(unittest.TestCase):
+    """{{classname}} unit tests"""
+
+{{#hasRequired}}
+    _REQUIRED_KWARGS = {
+{{#requiredVars}}
+{{^isDate}}
+{{^isDateTime}}
+        "{{name}}": {{{example}}},
+{{/isDateTime}}
+{{/isDate}}
+{{/requiredVars}}
+    }
+{{/hasRequired}}
+
+    # ------------------------------------------------------------------ #
+    #  Construction
+    # ------------------------------------------------------------------ #
+{{#hasRequired}}
+    def test_construction_required_only(self):
+        """Test constructing {{classname}} with only required fields."""
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{#requiredVars}}
+{{^isDate}}
+{{^isDateTime}}
+        self.assertEqual(obj.{{name}}, {{{example}}})
+{{/isDateTime}}
+{{/isDate}}
+{{/requiredVars}}
+{{/hasRequired}}
+
+{{^hasRequired}}
+    def test_construction_empty(self):
+        """Test constructing {{classname}} with no arguments (all optional)."""
+        obj = {{classname}}()
+        self.assertIsNotNone(obj)
+{{/hasRequired}}
+
+    def test_full_construction(self):
+        """Test constructing {{classname}} with all non-date fields."""
+        obj = {{classname}}(
+{{#vars}}
+{{^isDate}}
+{{^isDateTime}}
+            {{name}}={{{example}}},
+{{/isDateTime}}
+{{/isDate}}
+{{/vars}}
+        )
+        self.assertIsNotNone(obj)
+
+{{#hasRequired}}
+    def test_optional_fields_default_to_none(self):
+        """Test that optional fields without defaults are None."""
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{#optionalVars}}
+{{^defaultValue}}
+{{^isDate}}
+{{^isDateTime}}
+        self.assertIsNone(obj.{{name}})
+{{/isDateTime}}
+{{/isDate}}
+{{/defaultValue}}
+{{/optionalVars}}
+{{/hasRequired}}
+
+    def test_defaults_are_correct(self):
+        """Test that fields with explicit defaults are set correctly."""
+{{#hasRequired}}
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{/hasRequired}}
+{{^hasRequired}}
+        obj = {{classname}}()
+{{/hasRequired}}
+{{#vars}}
+{{#defaultValue}}
+        self.assertEqual(obj.{{name}}, {{{defaultValue}}})
+{{/defaultValue}}
+{{/vars}}
+
+    # ------------------------------------------------------------------ #
+    #  Serialization
+    # ------------------------------------------------------------------ #
+    def test_to_dict_uses_alias_keys(self):
+        """Test that to_dict() produces camelCase alias keys."""
+{{#hasRequired}}
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{/hasRequired}}
+{{^hasRequired}}
+        obj = {{classname}}(
+{{#vars}}
+{{^isDate}}
+{{^isDateTime}}
+{{#-first}}
+            {{name}}={{{example}}},
+{{/-first}}
+{{/isDateTime}}
+{{/isDate}}
+{{/vars}}
+        )
+{{/hasRequired}}
+        d = obj.to_dict()
+        self.assertIsInstance(d, dict)
+
+    def test_to_dict_excludes_none(self):
+        """Test that to_dict() excludes fields that are None."""
+{{#hasRequired}}
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{/hasRequired}}
+{{^hasRequired}}
+        obj = {{classname}}()
+{{/hasRequired}}
+        d = obj.to_dict()
+{{#optionalVars}}
+{{^defaultValue}}
+        self.assertNotIn("{{baseName}}", d)
+{{/defaultValue}}
+{{/optionalVars}}
+
+    def test_from_dict_with_camel_case(self):
+        """Test from_dict() accepts camelCase keys."""
+        data = {
+{{#requiredVars}}
+{{^isDate}}
+{{^isDateTime}}
+            "{{baseName}}": {{{example}}},
+{{/isDateTime}}
+{{/isDate}}
+{{/requiredVars}}
+        }
+        obj = {{classname}}.from_dict(data)
+        self.assertIsNotNone(obj)
+{{#requiredVars}}
+{{^isDate}}
+{{^isDateTime}}
+        self.assertEqual(obj.{{name}}, {{{example}}})
+{{/isDateTime}}
+{{/isDate}}
+{{/requiredVars}}
+
+    def test_from_dict_none_returns_none(self):
+        """Test from_dict(None) returns None."""
+        self.assertIsNone({{classname}}.from_dict(None))
+
+    def test_to_json_and_from_json_roundtrip(self):
+        """Test JSON serialization roundtrip."""
+{{#hasRequired}}
+        obj = {{classname}}(**self._REQUIRED_KWARGS)
+{{/hasRequired}}
+{{^hasRequired}}
+        obj = {{classname}}(
+{{#vars}}
+{{^isDate}}
+{{^isDateTime}}
+{{#-first}}
+            {{name}}={{{example}}},
+{{/-first}}
+{{/isDateTime}}
+{{/isDate}}
+{{/vars}}
+        )
+{{/hasRequired}}
+        json_str = obj.to_json()
+        restored = {{classname}}.from_json(json_str)
+        self.assertIsNotNone(restored)
+
+    # ------------------------------------------------------------------ #
+    #  Validation
+    # ------------------------------------------------------------------ #
+{{#requiredVars}}
+{{^isDate}}
+{{^isDateTime}}
+    def test_missing_{{name}}_raises(self):
+        """Test that missing required '{{name}}' raises ValidationError."""
+        kwargs = {k: v for k, v in self._REQUIRED_KWARGS.items() if k != "{{name}}"}
+        with self.assertRaises(ValidationError):
+            {{classname}}(**kwargs)
+
+{{/isDateTime}}
+{{/isDate}}
+{{/requiredVars}}
+{{#vars}}
+{{#isEnum}}
+    def test_enum_{{name}}_invalid_value_raises(self):
+        """Test invalid enum value for {{name}} raises ValidationError."""
+        with self.assertRaises(ValidationError):
+            {{classname}}(
+{{#hasRequired}}
+                **self._REQUIRED_KWARGS,
+{{/hasRequired}}
+                {{name}}="INVALID_ENUM_VALUE_XYZ",
+            )
+
+{{/isEnum}}
+{{/vars}}
+{{/model}}
+{{/models}}
+
+if __name__ == "__main__":
+    unittest.main()

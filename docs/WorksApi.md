@@ -1,4 +1,4 @@
-# pymetquay.WorksApi
+# openapi_client.WorksApi
 
 All URIs are relative to *https://metquayappurl.com/api/v1*
 
@@ -30,15 +30,15 @@ Creates a calibration, testing, or evaluation work.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.models.created_response import CreatedResponse
-from pymetquay.models.work_request import WorkRequest
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.models.created_response import CreatedResponse
+from openapi_client.models.work_request import WorkRequest
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -48,15 +48,15 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.WorksApi(api_client)
-    work_request = pymetquay.WorkRequest() # WorkRequest | 
+    api_instance = openapi_client.WorksApi(api_client)
+    work_request = openapi_client.WorkRequest() # WorkRequest | 
 
     try:
         # Create a new work
@@ -123,14 +123,14 @@ Retrieves a paginated list of works.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.models.work_response import WorkResponse
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.models.work_response import WorkResponse
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -140,14 +140,14 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.WorksApi(api_client)
+    api_instance = openapi_client.WorksApi(api_client)
     workspace_code = 'workspace_code_example' # str | Workspace code (optional - only required if workspace feature is enabled) (optional)
     first = 0 # int | Starting index for pagination (optional) (default to 0)
     limit = 50 # int | Number of records to return (default 50) (optional) (default to 50)
@@ -215,14 +215,14 @@ Updates an existing work.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.models.work_request import WorkRequest
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.models.work_request import WorkRequest
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -232,16 +232,16 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.WorksApi(api_client)
+    api_instance = openapi_client.WorksApi(api_client)
     metquay_id = 10427 # int | Numeric ID of the resource in Metquay system
-    work_request = pymetquay.WorkRequest() # WorkRequest | 
+    work_request = openapi_client.WorkRequest() # WorkRequest | 
 
     try:
         # Update an existing work

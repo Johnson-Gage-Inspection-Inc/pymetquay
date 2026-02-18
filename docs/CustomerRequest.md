@@ -45,7 +45,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from pymetquay import CustomerRequest
+from openapi_client.models.customer_request import CustomerRequest
 
 # TODO update the JSON string below
 json = "{}"

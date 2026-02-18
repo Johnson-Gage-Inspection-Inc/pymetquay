@@ -1,4 +1,4 @@
-# pymetquay.InstrumentcategoriesApi
+# openapi_client.InstrumentcategoriesApi
 
 All URIs are relative to *https://metquayappurl.com/api/v1*
 
@@ -25,15 +25,15 @@ Creates a new instrument category.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.models.created_response import CreatedResponse
-from pymetquay.models.instrument_category_request import InstrumentCategoryRequest
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.models.created_response import CreatedResponse
+from openapi_client.models.instrument_category_request import InstrumentCategoryRequest
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -43,15 +43,15 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.InstrumentcategoriesApi(api_client)
-    instrument_category_request = pymetquay.InstrumentCategoryRequest() # InstrumentCategoryRequest | 
+    api_instance = openapi_client.InstrumentcategoriesApi(api_client)
+    instrument_category_request = openapi_client.InstrumentCategoryRequest() # InstrumentCategoryRequest | 
 
     try:
         # Create a new instrument category
@@ -115,13 +115,13 @@ Permanently deletes an instrument category.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -131,14 +131,14 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.InstrumentcategoriesApi(api_client)
+    api_instance = openapi_client.InstrumentcategoriesApi(api_client)
     metquay_id = 10427 # int | Numeric ID of the resource in Metquay system
 
     try:
@@ -205,14 +205,14 @@ Updates an existing instrument category.
 * Bearer (JWT) Authentication (bearerAuth):
 
 ```python
-import pymetquay
-from pymetquay.models.instrument_category_request import InstrumentCategoryRequest
-from pymetquay.rest import ApiException
+import openapi_client
+from openapi_client.models.instrument_category_request import InstrumentCategoryRequest
+from openapi_client.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to https://metquayappurl.com/api/v1
 # See configuration.py for a list of all supported configuration parameters.
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     host = "https://metquayappurl.com/api/v1"
 )
 
@@ -222,16 +222,16 @@ configuration = pymetquay.Configuration(
 # satisfies your auth use case.
 
 # Configure Bearer authorization (JWT): bearerAuth
-configuration = pymetquay.Configuration(
+configuration = openapi_client.Configuration(
     access_token = os.environ["BEARER_TOKEN"]
 )
 
 # Enter a context with an instance of the API client
-with pymetquay.ApiClient(configuration) as api_client:
+with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = pymetquay.InstrumentcategoriesApi(api_client)
+    api_instance = openapi_client.InstrumentcategoriesApi(api_client)
     metquay_id = 10427 # int | Numeric ID of the resource in Metquay system
-    instrument_category_request = pymetquay.InstrumentCategoryRequest() # InstrumentCategoryRequest | 
+    instrument_category_request = openapi_client.InstrumentCategoryRequest() # InstrumentCategoryRequest | 
 
     try:
         # Update an instrument category

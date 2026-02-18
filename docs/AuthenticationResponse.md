@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from pymetquay import AuthenticationResponse
+from openapi_client.models.authentication_response import AuthenticationResponse
 
 # TODO update the JSON string below
 json = "{}"

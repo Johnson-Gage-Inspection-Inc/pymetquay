@@ -21,8 +21,16 @@ import re  # noqa: F401
 from datetime import date, datetime
 from typing import Any, ClassVar, Dict, List, Optional, Set, Union
 
-from pydantic import (BaseModel, ConfigDict, Field, StrictBool, StrictFloat,
-                      StrictInt, StrictStr, field_validator)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    field_validator,
+)
 from typing_extensions import Self
 
 
