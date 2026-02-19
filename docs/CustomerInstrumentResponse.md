@@ -43,6 +43,14 @@ Name | Type | Description | Notes
 **audited_date** | **date** | Date of last quality audit (MM-dd-yyyy) | [optional] 
 **certificate_url** | **str** | URL to the latest calibration certificate | [optional] 
 **project_names** | **List[str]** | Associated project names or codes | [optional] 
+**item_make** | **str** | Catalog item manufacturer | [optional] 
+**item_model** | **str** | Catalog item model | [optional] 
+**item_range** | **str** | Catalog item measurement range | [optional] 
+**item_type** | **str** | Catalog item type/variant | [optional] 
+**warranty_code** | **str** | Warranty code or identifier | [optional] 
+**warranty_expiration** | **date** | Warranty expiration date (MM-dd-yyyy) | [optional] 
+**created_date** | **date** | Date the instrument record was created (MM-dd-yyyy) | [optional] 
+**modified_date** | **date** | Date the instrument record was last modified (MM-dd-yyyy) | [optional] 
 
 ## Example
 
