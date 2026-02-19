@@ -1639,6 +1639,76 @@
                         "format": "double",
                         "example": 12500.75,
                         "description": "Opening account balance"
+                    },
+                    "isPerson": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Indicates if the customer is an individual person rather than an organization"
+                    },
+                    "phone2": {
+                        "type": "string",
+                        "example": "+1-312-555-0127",
+                        "description": "Secondary phone number"
+                    },
+                    "phone3": {
+                        "type": "string",
+                        "example": "+1-312-555-0128",
+                        "description": "Tertiary phone number"
+                    },
+                    "billingAddr3": {
+                        "type": "string",
+                        "example": "Floor 4",
+                        "description": "Billing address line 3"
+                    },
+                    "billingFax": {
+                        "type": "string",
+                        "example": "+1-312-555-0132",
+                        "description": "Billing department fax number"
+                    },
+                    "billingEmailId": {
+                        "type": "string",
+                        "example": "billing@metquay.com",
+                        "description": "Billing department email address"
+                    },
+                    "billingLocation": {
+                        "type": "string",
+                        "example": "Chicago HQ",
+                        "description": "Billing location name or identifier"
+                    },
+                    "shippingAddr3": {
+                        "type": "string",
+                        "example": "Loading Dock C",
+                        "description": "Shipping address line 3"
+                    },
+                    "shippingPhone1": {
+                        "type": "string",
+                        "example": "+1-312-555-0140",
+                        "description": "Shipping department phone number"
+                    },
+                    "shippingPhone2": {
+                        "type": "string",
+                        "example": "+1-312-555-0141",
+                        "description": "Shipping department alternate phone"
+                    },
+                    "shippingFax": {
+                        "type": "string",
+                        "example": "+1-312-555-0142",
+                        "description": "Shipping department fax number"
+                    },
+                    "shippingEmailId": {
+                        "type": "string",
+                        "example": "shipping@metquay.com",
+                        "description": "Shipping department email address"
+                    },
+                    "shippingLocation": {
+                        "type": "string",
+                        "example": "Elk Grove Warehouse",
+                        "description": "Shipping location name or identifier"
+                    },
+                    "customerSpecificRequirement": {
+                        "type": "string",
+                        "example": "Requires ISO 17025 accredited calibration only",
+                        "description": "Customer specific requirement (singular)"
                     }
                 }
             },
@@ -1850,6 +1920,49 @@
                             "Customer-Project-Acme-001"
                         ],
                         "description": "Associated project names or codes"
+                    },
+                    "itemMake": {
+                        "type": "string",
+                        "example": "Fluke Corporation",
+                        "description": "Catalog item manufacturer"
+                    },
+                    "itemModel": {
+                        "type": "string",
+                        "example": "87V Max",
+                        "description": "Catalog item model"
+                    },
+                    "itemRange": {
+                        "type": "string",
+                        "example": "0-1000V DC, 0-750V AC",
+                        "description": "Catalog item measurement range"
+                    },
+                    "itemType": {
+                        "type": "string",
+                        "example": "True RMS Digital Multimeter",
+                        "description": "Catalog item type/variant"
+                    },
+                    "warrantyCode": {
+                        "type": "string",
+                        "example": "WTY-STD-12M",
+                        "description": "Warranty code or identifier"
+                    },
+                    "warrantyExpiration": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2025",
+                        "description": "Warranty expiration date (MM-dd-yyyy)"
+                    },
+                    "createdDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-15-2024",
+                        "description": "Date the instrument record was created (MM-dd-yyyy)"
+                    },
+                    "modifiedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Date the instrument record was last modified (MM-dd-yyyy)"
                     }
                 }
             },
