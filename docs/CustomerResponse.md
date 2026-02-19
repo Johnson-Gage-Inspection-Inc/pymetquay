@@ -42,6 +42,20 @@ Name | Type | Description | Notes
 **is_taxable** | **bool** | Indicates if customer is subject to tax | [optional] 
 **tax_code** | **str** | Tax exemption code or tax ID | [optional] 
 **opening_balance** | **float** | Opening account balance | [optional] 
+**is_person** | **bool** | Indicates if the customer is an individual person rather than an organization | [optional] 
+**phone2** | **str** | Secondary phone number | [optional] 
+**phone3** | **str** | Tertiary phone number | [optional] 
+**billing_addr3** | **str** | Billing address line 3 | [optional] 
+**billing_fax** | **str** | Billing department fax number | [optional] 
+**billing_email_id** | **str** | Billing department email address | [optional] 
+**billing_location** | **str** | Billing location name or identifier | [optional] 
+**shipping_addr3** | **str** | Shipping address line 3 | [optional] 
+**shipping_phone1** | **str** | Shipping department phone number | [optional] 
+**shipping_phone2** | **str** | Shipping department alternate phone | [optional] 
+**shipping_fax** | **str** | Shipping department fax number | [optional] 
+**shipping_email_id** | **str** | Shipping department email address | [optional] 
+**shipping_location** | **str** | Shipping location name or identifier | [optional] 
+**customer_specific_requirement** | **str** | Customer specific requirement (singular) | [optional] 
 
 ## Example
 

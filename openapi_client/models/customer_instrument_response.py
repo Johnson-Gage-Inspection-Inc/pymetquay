@@ -188,6 +188,46 @@ class CustomerInstrumentResponse(BaseModel):
         description="Associated project names or codes",
         alias="projectNames",
     )
+    item_make: Optional[StrictStr] = Field(
+        default=None,
+        description="Catalog item manufacturer",
+        alias="itemMake",
+    )
+    item_model: Optional[StrictStr] = Field(
+        default=None,
+        description="Catalog item model",
+        alias="itemModel",
+    )
+    item_range: Optional[StrictStr] = Field(
+        default=None,
+        description="Catalog item measurement range",
+        alias="itemRange",
+    )
+    item_type: Optional[StrictStr] = Field(
+        default=None,
+        description="Catalog item type/variant",
+        alias="itemType",
+    )
+    warranty_code: Optional[StrictStr] = Field(
+        default=None,
+        description="Warranty code or identifier",
+        alias="warrantyCode",
+    )
+    warranty_expiration: Optional[date] = Field(
+        default=None,
+        description="Warranty expiration date (MM-dd-yyyy)",
+        alias="warrantyExpiration",
+    )
+    created_date: Optional[date] = Field(
+        default=None,
+        description="Date the instrument record was created (MM-dd-yyyy)",
+        alias="createdDate",
+    )
+    modified_date: Optional[date] = Field(
+        default=None,
+        description="Date the instrument record was last modified (MM-dd-yyyy)",
+        alias="modifiedDate",
+    )
     __properties: ClassVar[List[str]] = [
         "id",
         "barcode",
@@ -226,6 +266,14 @@ class CustomerInstrumentResponse(BaseModel):
         "auditedDate",
         "certificateUrl",
         "projectNames",
+        "itemMake",
+        "itemModel",
+        "itemRange",
+        "itemType",
+        "warrantyCode",
+        "warrantyExpiration",
+        "createdDate",
+        "modifiedDate",
     ]
 
     @field_validator("calibration_frequency_span")
@@ -247,6 +295,9 @@ class CustomerInstrumentResponse(BaseModel):
         "last_received_date",
         "last_delivered_date",
         "audited_date",
+        "warranty_expiration",
+        "created_date",
+        "modified_date",
         mode="before",
     )
     @classmethod
@@ -349,6 +400,14 @@ class CustomerInstrumentResponse(BaseModel):
                 "auditedDate": obj.get("auditedDate"),
                 "certificateUrl": obj.get("certificateUrl"),
                 "projectNames": obj.get("projectNames"),
+                "itemMake": obj.get("itemMake"),
+                "itemModel": obj.get("itemModel"),
+                "itemRange": obj.get("itemRange"),
+                "itemType": obj.get("itemType"),
+                "warrantyCode": obj.get("warrantyCode"),
+                "warrantyExpiration": obj.get("warrantyExpiration"),
+                "createdDate": obj.get("createdDate"),
+                "modifiedDate": obj.get("modifiedDate"),
             }
         )
         return _obj

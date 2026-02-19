@@ -6,7 +6,9 @@ validator is not part of the OpenAPI spec metadata.
 
 from datetime import date
 
-from openapi_client.models.customer_instrument_response import CustomerInstrumentResponse
+from openapi_client.models.customer_instrument_response import (
+    CustomerInstrumentResponse,
+)
 
 
 class TestCustomerInstrumentResponseCustom:

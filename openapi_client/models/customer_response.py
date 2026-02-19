@@ -63,7 +63,21 @@ class CustomerResponse(BaseModel):
     is_taxable: Optional[StrictBool] = Field(default=None, description="Indicates if customer is subject to tax", alias="isTaxable")
     tax_code: Optional[StrictStr] = Field(default=None, description="Tax exemption code or tax ID", alias="taxCode")
     opening_balance: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, description="Opening account balance", alias="openingBalance")
-    __properties: ClassVar[List[str]] = ["id", "parentCompanyCode", "companyCode", "isInactive", "companyName", "email", "website", "paymentMethod", "phone", "mobile", "fax", "other", "activateAlerts", "workspaceCode", "hasBillingAddress", "billingAddr1", "billingAddr2", "billingCity", "billingState", "billingZip", "billingCountry", "billingPhone1", "billingPhone2", "hasShippingAddress", "shippingAddr1", "shippingAddr2", "shippingCity", "shippingState", "shippingZip", "shippingCountry", "customerSpecificRequirements", "notes", "shortName", "isTaxable", "taxCode", "openingBalance"]
+    is_person: Optional[StrictBool] = Field(default=None, description="Indicates if the customer is an individual person rather than an organization", alias="isPerson")
+    phone2: Optional[StrictStr] = Field(default=None, description="Secondary phone number")
+    phone3: Optional[StrictStr] = Field(default=None, description="Tertiary phone number")
+    billing_addr3: Optional[StrictStr] = Field(default=None, description="Billing address line 3", alias="billingAddr3")
+    billing_fax: Optional[StrictStr] = Field(default=None, description="Billing department fax number", alias="billingFax")
+    billing_email_id: Optional[StrictStr] = Field(default=None, description="Billing department email address", alias="billingEmailId")
+    billing_location: Optional[StrictStr] = Field(default=None, description="Billing location name or identifier", alias="billingLocation")
+    shipping_addr3: Optional[StrictStr] = Field(default=None, description="Shipping address line 3", alias="shippingAddr3")
+    shipping_phone1: Optional[StrictStr] = Field(default=None, description="Shipping department phone number", alias="shippingPhone1")
+    shipping_phone2: Optional[StrictStr] = Field(default=None, description="Shipping department alternate phone", alias="shippingPhone2")
+    shipping_fax: Optional[StrictStr] = Field(default=None, description="Shipping department fax number", alias="shippingFax")
+    shipping_email_id: Optional[StrictStr] = Field(default=None, description="Shipping department email address", alias="shippingEmailId")
+    shipping_location: Optional[StrictStr] = Field(default=None, description="Shipping location name or identifier", alias="shippingLocation")
+    customer_specific_requirement: Optional[StrictStr] = Field(default=None, description="Customer specific requirement (singular)", alias="customerSpecificRequirement")
+    __properties: ClassVar[List[str]] = ["id", "parentCompanyCode", "companyCode", "isInactive", "companyName", "email", "website", "paymentMethod", "phone", "mobile", "fax", "other", "activateAlerts", "workspaceCode", "hasBillingAddress", "billingAddr1", "billingAddr2", "billingCity", "billingState", "billingZip", "billingCountry", "billingPhone1", "billingPhone2", "hasShippingAddress", "shippingAddr1", "shippingAddr2", "shippingCity", "shippingState", "shippingZip", "shippingCountry", "customerSpecificRequirements", "notes", "shortName", "isTaxable", "taxCode", "openingBalance", "isPerson", "phone2", "phone3", "billingAddr3", "billingFax", "billingEmailId", "billingLocation", "shippingAddr3", "shippingPhone1", "shippingPhone2", "shippingFax", "shippingEmailId", "shippingLocation", "customerSpecificRequirement"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -151,7 +165,21 @@ class CustomerResponse(BaseModel):
             "shortName": obj.get("shortName"),
             "isTaxable": obj.get("isTaxable"),
             "taxCode": obj.get("taxCode"),
-            "openingBalance": obj.get("openingBalance")
+            "openingBalance": obj.get("openingBalance"),
+            "isPerson": obj.get("isPerson"),
+            "phone2": obj.get("phone2"),
+            "phone3": obj.get("phone3"),
+            "billingAddr3": obj.get("billingAddr3"),
+            "billingFax": obj.get("billingFax"),
+            "billingEmailId": obj.get("billingEmailId"),
+            "billingLocation": obj.get("billingLocation"),
+            "shippingAddr3": obj.get("shippingAddr3"),
+            "shippingPhone1": obj.get("shippingPhone1"),
+            "shippingPhone2": obj.get("shippingPhone2"),
+            "shippingFax": obj.get("shippingFax"),
+            "shippingEmailId": obj.get("shippingEmailId"),
+            "shippingLocation": obj.get("shippingLocation"),
+            "customerSpecificRequirement": obj.get("customerSpecificRequirement")
         })
         return _obj
 

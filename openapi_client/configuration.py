@@ -540,6 +540,7 @@ class Configuration:
                     "metquayhost": {
                         "description": "Metquay application host (change this to your application host)",
                         "default_value": "johnsongage.metquay.co",
+                        "enum_values": [],
                     }
                 },
             }
