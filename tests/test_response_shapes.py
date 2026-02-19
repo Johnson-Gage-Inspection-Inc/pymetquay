@@ -48,6 +48,18 @@ def _model_properties(model_cls: Type[Any]) -> Set[str]:
 class TestResponseShapes:
     """For each list endpoint, assert that live API keys match the model."""
 
+    @pytest.fixture(autouse=True)
+    def _ensure_authenticated(self, client):
+        """Guarantee the client has a valid token before raw API calls.
+
+        The high-level ``MetquayClient`` methods authenticate lazily, but
+        these tests hit the generated ``*_with_http_info`` methods directly,
+        which bypass that logic.  Without this fixture the tests fail when
+        run in isolation (e.g. from VS Code) because no prior test has
+        triggered authentication on the session-scoped client.
+        """
+        client.authenticate()
+
     def test_customer_response_shape(self, client):
         resp: ApiResponse = client._customers_api.get_customers_with_http_info(  # type: ignore[type-arg]
             limit=1,
