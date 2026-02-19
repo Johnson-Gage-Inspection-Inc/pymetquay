@@ -1,1 +1,2171 @@
-{"openapi":"3.0.0","servers":[{"url":"https://{metquayappurl}/api/v1/","description":"Customer-specific API server","variables":{"metquayappurl":{"default":"metquayappurl.com","description":"Metquay application URL(change this to your application URL)"}}}],"info":{"description":"Enterprise CRUD API for managing Metquay calibration management system entities.\nProvides complete CRUD operations for customers, instrument categories, customer instruments, and works.\n\n## Authentication Flow\n1. Call `/authenticate` with your access/secret keys\n2. Receive Bearer token (valid for 15 minutes)\n3. Include token in `Authorization: Bearer {token}` header for all subsequent requests\n4. Re-authenticate when token expires\n\n## Rate Limiting\n- **100 requests per minute** per API client\n- Exceeding limit returns 429 Too Many Requests\n- Contact support for rate limit increases\n\n## Idempotency\n- PUT and DELETE operations are idempotent (safe to retry)\n- POST operations are NOT idempotent (retry may create duplicates)\n\n## Pagination\n- List endpoints support pagination via `first` and `limit` query parameters\n- `first`: Starting index (default: 0, minimum: 0)\n- `limit`: Number of records to return (default: 50)\n\n## Workspace Feature\n- `workspaceCode` is optional and only required if the workspace feature is enabled for your organization\n- If workspace feature is not enabled, omit this parameter\n","version":"1.0.0-jgi","title":"Metquay CRUD API","contact":{"name":"Metquay API Support","email":"support@metquay.atlassian.net"},"license":{"name":"Apache 2.0","url":"http://www.apache.org/licenses/LICENSE-2.0.html"}},"tags":[{"name":"authenticate","description":"Authentication operations - obtain and manage access tokens"},{"name":"customers","description":"Customer management (organizations/individuals that own instruments)"},{"name":"instrumentcategories","description":"Instrument category management (classify instruments by type)"},{"name":"customerinstruments","description":"Customer instrument management (devices requiring calibration)"},{"name":"works","description":"Work management (calibration/testing/evaluation jobs)"}],"paths":{"/authenticate":{"post":{"tags":["authenticate"],"summary":"Authenticate and obtain access token","operationId":"getAccessToken","description":"Authenticates client application using pre-provisioned access/secret keys.\n\n**Token Expiry:** 15 minutes (900 seconds)\n**Rate Limit:** Not applied to this endpoint\n\n**Headers Required in Subsequent Calls:**\n`Authorization: Bearer {accessToken}`\n","requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthenticationRequest"}}}},"responses":{"200":{"description":"Authentication successful","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthenticationResponse"}}}},"400":{"$ref":"#/components/responses/400"},"500":{"$ref":"#/components/responses/500"}}}},"/customers":{"post":{"tags":["customers"],"summary":"Create a new customer","operationId":"createCustomer","description":"Creates a new customer record. Customers own calibration instruments.\n\n**Auto-generation:** `companyCode` auto-generated if not provided\n**Uniqueness:** `companyName` must be unique\n**Default Address:** Billing address = Primary = Certificate address\n","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CustomerRequest"}}}},"responses":{"201":{"description":"Customer created successfully","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreatedResponse"}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"get":{"tags":["customers"],"summary":"Get paginated list of customers","operationId":"getCustomers","description":"Retrieves a paginated list of customers.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n","security":[{"bearerAuth":[]}],"parameters":[{"in":"query","name":"workspaceCode","schema":{"type":"string"},"required":false,"description":"Workspace code (optional - only required if workspace feature is enabled)"},{"in":"query","name":"first","schema":{"type":"integer","minimum":0,"default":0},"required":false,"description":"Starting index for pagination"},{"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"default":50},"required":false,"description":"Number of records to return (default 50)"}],"responses":{"200":{"description":"Success - returns paginated customers","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/CustomerResponse"}}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/customers/{metquayId}":{"put":{"tags":["customers"],"summary":"Update an existing customer","operationId":"updateCustomer","description":"Updates an existing customer record.\n\n**Full Replacement:** All fields not included in request will be reset to null/default\n**Immutable Fields:** `companyCode` cannot be modified after creation\n**Type Change:** Cannot change `isPerson` (company/individual) after creation\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CustomerRequest"}}}},"responses":{"200":{"description":"Customer updated successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"delete":{"tags":["customers"],"summary":"Delete a customer","operationId":"deleteCustomer","description":"Permanently deletes a customer record.\n\n**Restrictions - Cannot delete if customer has:**\n- Any associated instruments\n- Any active or historical works\n\n**Alternative:** Set `isInactive: true` instead of deleting\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"responses":{"200":{"description":"Customer deleted successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/instrument-categories":{"post":{"tags":["instrumentcategories"],"summary":"Create a new instrument category","operationId":"createInstrumentCategory","description":"Creates a new instrument category.\n\n**Uniqueness:** Category `name` must be globally unique (case-insensitive)\n**Dependency:** Cannot delete categories with associated instruments\n","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/InstrumentCategoryRequest"}}}},"responses":{"201":{"description":"Instrument category created successfully","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreatedResponse"}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/instrument-categories/{metquayId}":{"put":{"tags":["instrumentcategories"],"summary":"Update an instrument category","operationId":"updateInstrumentCategory","description":"Updates an existing instrument category.\n\n**Restriction:** Cannot update if category has associated instruments\n**Workaround:** \n1. Reassign instruments to different category\n2. Update category name\n3. Reassign instruments back\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/InstrumentCategoryRequest"}}}},"responses":{"200":{"description":"Instrument category updated successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"delete":{"tags":["instrumentcategories"],"summary":"Delete an instrument category","operationId":"deleteInstrumentCategory","description":"Permanently deletes an instrument category.\n\n**Required:** No instruments can be assigned to this category\n**Action:** Reassign or delete all instruments in this category first\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"responses":{"200":{"description":"Instrument category deleted successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/customer-instrument-details":{"post":{"tags":["customerinstruments"],"summary":"Register a new customer instrument","operationId":"createCustomerInstrument","description":"Registers a new instrument owned by a customer.\n\n**Required References:**\n- Existing customer (`companyId`)\n- Existing instrument category (`instrumentCategoryName`)\n\n**Calibration Scheduling:**\nIf `calibrationFrequency` + `calibrationFrequencySpan` provided:\n- `dueDate` auto-calculated from `calibratedDate` (defaults to creation date)\n\n**Uniqueness:** Serial/Tag number combinations should be unique per customer\n","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CustomerInstrumentRequest"}}}},"responses":{"201":{"description":"Customer instrument created successfully","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreatedResponse"}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"get":{"tags":["customerinstruments"],"summary":"Get paginated list of customer instruments","operationId":"getCustomerInstruments","description":"Retrieves a paginated list of customer instruments.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n","security":[{"bearerAuth":[]}],"parameters":[{"in":"query","name":"workspaceCode","schema":{"type":"string"},"required":false,"description":"Workspace code (optional - only required if workspace feature is enabled)"},{"in":"query","name":"first","schema":{"type":"integer","minimum":0,"default":0},"required":false,"description":"Starting index for pagination"},{"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"default":50},"required":false,"description":"Number of records to return (default 50)"}],"responses":{"200":{"description":"Success - returns paginated customer instruments","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/CustomerInstrumentResponse"}}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/customer-instrument-details/{metquayId}":{"put":{"tags":["customerinstruments"],"summary":"Update a customer instrument","operationId":"updateCustomerInstrument","description":"Updates an existing customer instrument.\n\n**Full Replacement:** All fields not included are reset\n**Ownership Change:** Changing `companyId` transfers instrument to another customer\n**Category Change:** May affect calibration procedures and pricing\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CustomerInstrumentRequest"}}}},"responses":{"200":{"description":"Customer instrument updated successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"delete":{"tags":["customerinstruments"],"summary":"Delete a customer instrument","operationId":"deleteCustomerInstrument","description":"Permanently deletes a customer instrument.\n\n**Restrictions - Cannot delete if instrument has:**\n- Any associated works (active or historical)\n- Any child instruments (parentInstrumentId references this instrument)\n\n**Alternative:** Set `isActive: false` instead of deleting\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"responses":{"200":{"description":"Customer instrument deleted successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/works":{"post":{"tags":["works"],"summary":"Create a new work","operationId":"createWork","description":"Creates a calibration, testing, or evaluation work.\n\n**Work Types (`workFlowType`):**\n- `Calibration`: Adjust and verify accuracy (default)\n- `Testing`: Verify performance without adjustment\n- `Evaluation`: Assess condition and recommend actions\n\n**Auto-numbering:** `workNo` auto-generated if not provided\n**Required Reference:** Existing customer instrument (`customerInstrumentId`)\n","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/WorkRequest"}}}},"responses":{"201":{"description":"Work created successfully","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreatedResponse"}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}},"get":{"tags":["works"],"summary":"Get paginated list of works","operationId":"getWorks","description":"Retrieves a paginated list of works.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n","security":[{"bearerAuth":[]}],"parameters":[{"in":"query","name":"workspaceCode","schema":{"type":"string"},"required":false,"description":"Workspace code (optional - only required if workspace feature is enabled)"},{"in":"query","name":"first","schema":{"type":"integer","minimum":0,"default":0},"required":false,"description":"Starting index for pagination"},{"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"default":50},"required":false,"description":"Number of records to return (default 50)"}],"responses":{"200":{"description":"Success - returns paginated works","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/WorkResponse"}}}}},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}},"/works/{metquayId}":{"put":{"tags":["works"],"summary":"Update an existing work","operationId":"updateWork","description":"Updates an existing work.\n\n**Immutable Fields:** `workNo` cannot be changed\n**Status Restriction:** Cannot modify completed or cancelled works\n**Reassignment:** Changing `customerInstrumentId` reassigns work to different instrument\n","security":[{"bearerAuth":[]}],"parameters":[{"$ref":"#/components/parameters/MetquayId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/WorkRequest"}}}},"responses":{"200":{"description":"Work updated successfully"},"400":{"$ref":"#/components/responses/400"},"401":{"$ref":"#/components/responses/401"},"403":{"$ref":"#/components/responses/403"},"404":{"$ref":"#/components/responses/404"},"409":{"$ref":"#/components/responses/409"},"422":{"$ref":"#/components/responses/422"},"429":{"$ref":"#/components/responses/429"},"500":{"$ref":"#/components/responses/500"}}}}},"components":{"securitySchemes":{"bearerAuth":{"type":"http","scheme":"bearer","bearerFormat":"JWT","description":"Token valid for 15 minutes.\nHeader format: `Authorization: Bearer {accessToken}`\n"}},"parameters":{"MetquayId":{"in":"path","name":"metquayId","schema":{"type":"integer","minimum":1},"required":true,"description":"Numeric ID of the resource in Metquay system","example":10427}},"responses":{"400":{"description":"Bad request - validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":400,"message":"The request contains invalid fields or missing required parameters"}}}},"401":{"description":"Unauthorized - missing or invalid token","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":401,"message":"Invalid or expired access token. Please re-authenticate."}}}},"403":{"description":"Forbidden - insufficient permissions","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":403,"message":"You don't have permission to access this resource"}}}},"404":{"description":"Not found - resource does not exist","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":404,"message":"The requested resource with ID 10427 does not exist"}}}},"409":{"description":"Conflict - duplicate or dependency violation","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":409,"message":"Resource cannot be saved because it violates unique constraints. A customer with this company code already exists."}}}},"422":{"description":"Unprocessable entity - business rule violation","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":422,"message":"Cannot process request since one or more validation failed. Company name is required."}}}},"429":{"description":"Too Many Requests - rate limit exceeded (100/minute)","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":429,"message":"API rate limit of 100 requests per minute exceeded. Please try again in 30 seconds."}}}},"500":{"description":"Internal server error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"},"example":{"code":500,"message":"An unexpected error occurred. Our team has been notified. Reference ID: ERR-12345-67890"}}}}},"schemas":{"CustomerRequest":{"description":"Request payload for creating or updating a customer","type":"object","required":["companyName"],"properties":{"parentCompanyCode":{"type":"string","example":"M3-HQ","description":"Parent company code (if this customer is a subsidiary)"},"companyCode":{"type":"string","example":"MCS-001","description":"Unique identifier for the customer. Auto-generated if not provided."},"isInactive":{"type":"boolean","example":false,"description":"Customer status - false for active, true for inactive","default":false},"companyName":{"type":"string","example":"Metquay Inc.","description":"Legal name of the customer organization"},"email":{"type":"string","example":"accounts@metquay.com","description":"Primary contact email address"},"website":{"type":"string","example":"https://www.metquay.com","description":"Customer website URL"},"paymentMethod":{"type":"string","example":"Bank Transfer","description":"Preferred payment method"},"phone":{"type":"string","example":"+1-312-555-0123","description":"Primary phone number"},"mobile":{"type":"string","example":"+1-312-555-0124","description":"Mobile phone number"},"fax":{"type":"string","example":"+1-312-555-0125","description":"Fax number"},"other":{"type":"string","example":"+1-312-555-0126","description":"Alternate phone number"},"activateAlerts":{"type":"boolean","example":true,"description":"Enable automated alert notifications","default":false},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code (required only if workspace feature is enabled)"},"hasBillingAddress":{"type":"boolean","example":true,"description":"Indicates if customer has a billing address","default":false},"billingAddr1":{"type":"string","example":"123 Innovation Drive","description":"Billing address line 1"},"billingAddr2":{"type":"string","example":"Suite 400","description":"Billing address line 2"},"billingCity":{"type":"string","example":"Chicago","description":"Billing address city"},"billingState":{"type":"string","example":"Illinois","description":"Billing address state/province"},"billingZip":{"type":"string","example":"60606-1234","description":"Billing address postal/zip code"},"billingCountry":{"type":"string","example":"United States","description":"Billing address country"},"billingPhone1":{"type":"string","example":"+1-312-555-0130","description":"Billing department phone number"},"billingPhone2":{"type":"string","example":"+1-312-555-0131","description":"Billing department alternate phone"},"hasShippingAddress":{"type":"boolean","example":true,"description":"Indicates if customer has a shipping address","default":false},"shippingAddr1":{"type":"string","example":"456 Distribution Parkway","description":"Shipping address line 1"},"shippingAddr2":{"type":"string","example":"Building B, Dock 7","description":"Shipping address line 2"},"shippingCity":{"type":"string","example":"Elk Grove Village","description":"Shipping address city"},"shippingState":{"type":"string","example":"Illinois","description":"Shipping address state/province"},"shippingZip":{"type":"string","example":"60007-2345","description":"Shipping address postal/zip code"},"shippingCountry":{"type":"string","example":"United States","description":"Shipping address country"},"customerSpecificRequirements":{"type":"string","example":"All deliveries require forklift access and must be scheduled 24 hours in advance. Contact warehouse manager at ext. 4500.","description":"Customer specific delivery or service requirements"},"notes":{"type":"string","example":"Premium support customer since 2018. Monthly calibration volume averages 50-75 instruments. Primary contact: John Smith (john.smith@metquay.com)","description":"General notes about the customer"},"shortName":{"type":"string","example":"Metquay","description":"Short name or alias for display purposes"},"isTaxable":{"type":"boolean","example":true,"description":"Indicates if customer is subject to tax","default":true},"taxCode":{"type":"string","example":"TAX-EXEMPT-IL-2024","description":"Tax exemption code or tax ID"},"openingBalance":{"type":"number","format":"double","example":12500.75,"description":"Opening account balance"}}},"InstrumentCategoryRequest":{"description":"Request payload for creating or updating an instrument category","type":"object","required":["name"],"properties":{"name":{"type":"string","example":"Digital Multimeter","description":"Instrument category name - must be unique across the system"},"description":{"type":"string","example":"Electronic test equipment used to measure voltage, current, and resistance. Includes both benchtop and handheld models.","description":"Detailed description of the instrument category"}}},"CustomerInstrumentRequest":{"description":"Request payload for creating or updating a customer instrument","type":"object","required":["name","companyId","instrumentCategoryName"],"properties":{"name":{"type":"string","example":"Fluke 87V Industrial Digital Multimeter","description":"Descriptive name of the instrument"},"companyId":{"type":"string","example":"MCS-001","description":"Customer ID or code that owns this instrument"},"serialNo":{"type":"string","example":"FLK-87V-2024-4582","description":"Manufacturer's unique serial number"},"tagNo":{"type":"string","example":"METER-LAB-87V-042","description":"Internal asset tag or tracking number"},"make":{"type":"string","example":"Fluke Corporation","description":"Instrument manufacturer or brand"},"model":{"type":"string","example":"87V Max","description":"Manufacturer's model designation"},"range":{"type":"string","example":"0-1000V DC, 0-750V AC, 0-10A, 0-50MΩ","description":"Measurement range specifications"},"instrumentCategoryName":{"type":"string","example":"Digital Multimeter","description":"Category this instrument belongs to"},"calibrationFrequency":{"type":"string","example":"180","description":"Numerical value for calibration frequency"},"calibrationFrequencySpan":{"type":"string","example":"DAY","description":"Time unit for calibration frequency","enum":["DAY","WEEK","MONTH","YEAR"]},"instrumentStatus":{"type":"string","example":"RECEIVED","description":"Current operational status of the instrument"},"lastReceivedDate":{"type":"string","format":"date-time","example":"01-15-2024 09:30:00","description":"Date and time when instrument was last received"},"lastDeliveredDate":{"type":"string","format":"date-time","example":"01-20-2024 16:45:00","description":"Date and time when instrument was last delivered"},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code (required only if workspace feature is enabled)"}}},"WorkRequest":{"description":"Request payload for creating or updating a work","type":"object","required":["customerInstrumentId"],"properties":{"customerInstrumentId":{"type":"integer","example":8234,"description":"Numeric ID of the customer instrument being calibrated/tested"},"inDate":{"type":"string","format":"date-time","example":"01-22-2024 10:15:00","description":"Date and time when instrument was received for work"},"accreditation":{"type":"boolean","example":true,"description":"true for ISO 17025 accredited work, false for non-accredited","default":false},"complianceRequired":{"type":"boolean","example":true,"description":"true if regulatory compliance verification is required","default":false},"siteJob":{"type":"boolean","example":false,"description":"true for on-site work at customer facility, false for in-lab","default":false},"outsource":{"type":"boolean","example":false,"description":"true if work is subcontracted to external provider","default":false},"customerSpecificRequirements":{"type":"string","example":"Calibration required at 5 specific points: -20°C, 0°C, 25°C, 50°C, 80°C. Certificate must include measurement uncertainty at 95% confidence level.","description":"Special requirements or instructions from customer"},"scope":{"type":"string","example":"Full calibration per manufacturer specifications. 5-point verification across all ranges. Includes NIST traceable certificate.","description":"Detailed description of work to be performed"},"certificateAddress":{"type":"string","example":"Metquay Inc., 123 Innovation Drive, Suite 400, Chicago, IL 60606-1234, United States","description":"Complete address to be printed on calibration certificate"},"remarks":{"type":"string","example":"Rush order requested by customer. Standard 5-day turnaround reduced to 3 days. Quote #Q-2024-0123 approved.","description":"General remarks about the work order"},"workFlowType":{"type":"string","example":"Calibration","description":"Type of workflow to apply","enum":["Calibration","Testing","Evaluation"],"default":"Calibration"},"deliveryDate":{"type":"string","format":"date-time","example":"01-29-2024 17:00:00","description":"Target completion and delivery date"},"salesOrderNo":{"type":"string","example":"SO-2024-04567","description":"Customer purchase order or sales order reference"},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code (required only if workspace feature is enabled)"},"subConDetails":{"type":"string","example":"High-voltage calibration subcontracted to PowerCal Labs. Expected return date: 01-26-2024. Subcontractor PO #PO-2024-8910.","description":"Additional details for subcontracted work"}}},"CustomerResponse":{"description":"Customer response object","type":"object","properties":{"id":{"type":"integer","example":10427,"description":"Unique Metquay ID of the customer"},"parentCompanyCode":{"type":"string","example":"M3-HQ","description":"Parent company code (if this customer is a subsidiary)"},"companyCode":{"type":"string","example":"MCS-001","description":"Unique identifier for the customer"},"isInactive":{"type":"boolean","example":false,"description":"Customer status - false for active, true for inactive"},"companyName":{"type":"string","example":"Metquay Inc.","description":"Legal name of the customer organization"},"email":{"type":"string","example":"accounts@metquay.com","description":"Primary contact email address"},"website":{"type":"string","example":"https://www.metquay.com","description":"Customer website URL"},"paymentMethod":{"type":"string","example":"Bank Transfer","description":"Preferred payment method"},"phone":{"type":"string","example":"+1-312-555-0123","description":"Primary phone number"},"mobile":{"type":"string","example":"+1-312-555-0124","description":"Mobile phone number"},"fax":{"type":"string","example":"+1-312-555-0125","description":"Fax number"},"other":{"type":"string","example":"+1-312-555-0126","description":"Alternate phone number"},"activateAlerts":{"type":"boolean","example":true,"description":"Alert notification status"},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code"},"hasBillingAddress":{"type":"boolean","example":true,"description":"Indicates if billing address exists"},"billingAddr1":{"type":"string","example":"123 Innovation Drive","description":"Billing address line 1"},"billingAddr2":{"type":"string","example":"Suite 400","description":"Billing address line 2"},"billingCity":{"type":"string","example":"Chicago","description":"Billing address city"},"billingState":{"type":"string","example":"Illinois","description":"Billing address state/province"},"billingZip":{"type":"string","example":"60606-1234","description":"Billing address postal/zip code"},"billingCountry":{"type":"string","example":"United States","description":"Billing address country"},"billingPhone1":{"type":"string","example":"+1-312-555-0130","description":"Billing department phone number"},"billingPhone2":{"type":"string","example":"+1-312-555-0131","description":"Billing department alternate phone"},"hasShippingAddress":{"type":"boolean","example":true,"description":"Indicates if shipping address exists"},"shippingAddr1":{"type":"string","example":"456 Distribution Parkway","description":"Shipping address line 1"},"shippingAddr2":{"type":"string","example":"Building B, Dock 7","description":"Shipping address line 2"},"shippingCity":{"type":"string","example":"Elk Grove Village","description":"Shipping address city"},"shippingState":{"type":"string","example":"Illinois","description":"Shipping address state/province"},"shippingZip":{"type":"string","example":"60007-2345","description":"Shipping address postal/zip code"},"shippingCountry":{"type":"string","example":"United States","description":"Shipping address country"},"customerSpecificRequirements":{"type":"string","example":"All deliveries require forklift access and must be scheduled 24 hours in advance. Contact warehouse manager at ext. 4500.","description":"Customer specific delivery or service requirements"},"notes":{"type":"string","example":"Premium support customer since 2018. Monthly calibration volume averages 50-75 instruments. Primary contact: John Smith (john.smith@metquay.com)","description":"General notes about the customer"},"shortName":{"type":"string","example":"Metquay","description":"Short name or alias for display purposes"},"isTaxable":{"type":"boolean","example":true,"description":"Indicates if customer is subject to tax"},"taxCode":{"type":"string","example":"TAX-EXEMPT-IL-2024","description":"Tax exemption code or tax ID"},"openingBalance":{"type":"number","format":"double","example":12500.75,"description":"Opening account balance"}}},"CustomerInstrumentResponse":{"description":"Customer instrument response object","type":"object","properties":{"id":{"type":"integer","example":8234,"description":"Unique Metquay ID of the instrument"},"barcode":{"type":"string","example":"MQ-87V-2024-04582","description":"Internal barcode identifier"},"companyName":{"type":"string","example":"Metquay Inc.","description":"Name of the customer who owns the instrument"},"instrumentName":{"type":"string","example":"Fluke 87V Industrial Digital Multimeter","description":"Descriptive name of the instrument"},"instrumentCategory":{"type":"string","example":"Digital Multimeter","description":"Category of the instrument"},"itemName":{"type":"string","example":"Fluke 87V Digital Multimeter","description":"Associated catalog item name"},"make":{"type":"string","example":"Fluke Corporation","description":"Instrument manufacturer"},"model":{"type":"string","example":"87V Max","description":"Instrument model"},"range":{"type":"string","example":"0-1000V DC, 0-750V AC, 0-10A, 0-50MΩ","description":"Measurement range"},"type":{"type":"string","example":"True RMS Digital Multimeter","description":"Instrument type/variant"},"tolerance":{"type":"string","example":"±0.05% basic DC accuracy","description":"Accuracy tolerance specification"},"serialNo":{"type":"string","example":"FLK-87V-2024-4582","description":"Manufacturer serial number"},"tagNo":{"type":"string","example":"METER-LAB-87V-042","description":"Internal asset tag number"},"controlNo":{"type":"string","example":"CTL-2024-042","description":"Quality control tracking number"},"calibrationFrequency":{"type":"string","example":"180","description":"Calibration frequency value"},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code"},"calibrationFrequencySpan":{"type":"string","example":"DAY","description":"Calibration frequency time unit","enum":["DAY","WEEK","MONTH","YEAR"]},"calibratedDate":{"type":"string","format":"date","example":"01-22-2024","description":"Most recent calibration date (MM-dd-yyyy)"},"dueDate":{"type":"string","format":"date","example":"07-20-2024","description":"Next calibration due date (MM-dd-yyyy)"},"active":{"type":"boolean","example":true,"description":"Instrument active status"},"parentTagNo":{"type":"string","example":"SYSTEM-87V-MAIN-001","description":"Parent instrument tag number (for component instruments)"},"departmentName":{"type":"string","example":"Metrology Lab - Electrical","description":"Department or location where instrument is assigned"},"verificationDueDate":{"type":"string","format":"date","example":"07-15-2024","description":"Intermediate verification due date (MM-dd-yyyy)"},"calibrationCost":{"type":"number","format":"double","example":185.5,"description":"Cost of calibration service"},"isCalibratedExternally":{"type":"boolean","example":false,"description":"Indicates if calibration is performed by external vendor"},"calibrationVendor":{"type":"string","example":"Metquay Calibration Services","description":"Name of calibration service provider"},"remarks":{"type":"string","example":"High-precision instrument for ISO 17025 accredited calibrations. Requires special handling.","description":"General remarks about the instrument"},"instrumentNotes":{"type":"string","example":"Battery replaced on 12-15-2023. Firmware updated to v2.1. Next firmware check due: 06-2024.","description":"Internal maintenance notes"},"isMobile":{"type":"boolean","example":true,"description":"Indicates if instrument is portable for field use"},"isCalibrationRequired":{"type":"boolean","example":true,"description":"Indicates if periodic calibration is required"},"lastReceivedDate":{"type":"string","format":"date","example":"01-22-2024","description":"Date instrument was last received (MM-dd-yyyy)"},"lastDeliveredDate":{"type":"string","format":"date","example":"01-20-2024","description":"Date instrument was last delivered (MM-dd-yyyy)"},"calibrationStatus":{"type":"string","example":"Good","description":"Current calibration status"},"receivedCondition":{"type":"string","example":"Good","description":"Condition assessment when received"},"auditedDate":{"type":"string","format":"date","example":"01-22-2024","description":"Date of last quality audit (MM-dd-yyyy)"},"certificateUrl":{"type":"string","example":"https://certificates.metquay.com/FLK-87V-2024-4582-20240122.pdf","description":"URL to the latest calibration certificate"},"projectNames":{"type":"array","items":{"type":"string"},"example":["ISO-17025-2024-Upgrade","Lab-Certification-Q2","Customer-Project-Acme-001"],"description":"Associated project names or codes"}}},"WorkResponse":{"description":"Work response object","type":"object","properties":{"id":{"type":"integer","example":21568,"description":"Unique Metquay ID of the work"},"workNo":{"type":"string","example":"CAL-2024-021568","description":"Unique work order number"},"customerInstrumentId":{"type":"integer","example":8234,"description":"Numeric ID of the customer instrument"},"inDate":{"type":"string","format":"date","example":"01-22-2024","description":"Date instrument was received"},"accreditation":{"type":"boolean","example":true,"description":"Indicates if work is ISO 17025 accredited"},"complianceRequired":{"type":"boolean","example":true,"description":"Indicates if regulatory compliance verification is required"},"siteJob":{"type":"boolean","example":false,"description":"Indicates if work was performed on-site"},"outsource":{"type":"boolean","example":false,"description":"Indicates if work was subcontracted"},"customerSpecificRequirements":{"type":"string","example":"Calibration required at 5 specific points: -20°C, 0°C, 25°C, 50°C, 80°C. Certificate must include measurement uncertainty at 95% confidence level.","description":"Customer special requirements"},"scope":{"type":"string","example":"Full calibration per manufacturer specifications. 5-point verification across all ranges. Includes NIST traceable certificate.","description":"Detailed scope of work"},"certificateAddress":{"type":"string","example":"Metquay Inc., 123 Innovation Drive, Suite 400, Chicago, IL 60606-1234, United States","description":"Complete address printed on certificate"},"remarks":{"type":"string","example":"Rush order requested by customer. Standard 5-day turnaround reduced to 3 days. Quote #Q-2024-0123 approved.","description":"Work order remarks"},"workFlowType":{"type":"string","example":"Calibration","description":"Type of workflow performed"},"deliveryDate":{"type":"string","format":"date","example":"01-29-2024","description":"Target delivery date"},"salesOrderNo":{"type":"string","example":"SO-2024-04567","description":"Customer purchase order or sales order reference"},"workspaceCode":{"type":"string","example":"NA-HQ","description":"Workspace code"},"subConDetails":{"type":"string","example":"High-voltage calibration subcontracted to PowerCal Labs. Returned on 01-26-2024. Subcontractor PO #PO-2024-8910.","description":"Subcontractor details if outsourced"},"customer":{"type":"string","example":"Metquay Inc.","description":"Customer name"},"instrumentName":{"type":"string","example":"Fluke 87V Industrial Digital Multimeter","description":"Instrument name"},"instrumentSerialNo":{"type":"string","example":"FLK-87V-2024-4582","description":"Instrument serial number"},"instrumentTagNo":{"type":"string","example":"METER-LAB-87V-042","description":"Instrument tag number"},"instrumentBarcode":{"type":"string","example":"MQ-87V-2024-04582","description":"Instrument barcode"},"instrumentCategoryName":{"type":"string","example":"Digital Multimeter","description":"Instrument category"},"itemDescription":{"type":"string","example":"Fluke 87V Max Digital Multimeter with NIST certification","description":"Catalog item description"},"departmentName":{"type":"string","example":"Metrology Lab - Electrical","description":"Department performing the work"},"status":{"type":"string","example":"Finished","description":"Current work status"},"reportType":{"type":"string","example":"Certificate","description":"Type of report/certificate generated"},"accreditationType":{"type":"string","example":"Accredited","description":"Accreditation standard applied"},"procedure":{"type":"string","example":"FLUKE-87V-CAL-PROC-Rev4","description":"Calibration procedure used"},"technician":{"type":"string","example":"Sandeep Nair","description":"Primary technician assigned"},"workDate":{"type":"string","format":"date","example":"01-22-2024","description":"Date work was performed (MM-dd-yyyy)"},"dueDate":{"type":"string","format":"date","example":"01-29-2024","description":"Original due date (MM-dd-yyyy)"},"revisionNo":{"type":"integer","example":1,"description":"Revision number of the work order"},"certificateNo":{"type":"string","example":"MQ-CAL-2024-021568","description":"Generated certificate number"},"finishedDate":{"type":"string","format":"date","example":"01-26-2024","description":"Date work was completed (MM-dd-yyyy)"},"finishedBy":{"type":"string","example":"Sandeep Nair","description":"Technician who completed the work"},"salesPerson":{"type":"string","example":"Michael Chen","description":"Sales representative"},"recommendedDueDate":{"type":"string","format":"date","example":"07-20-2024","description":"Recommended next calibration due date (MM-dd-yyyy)"},"calibratedDate":{"type":"string","format":"date","example":"01-26-2024","description":"Actual calibration date (MM-dd-yyyy)"},"workStartDate":{"type":"string","format":"date","example":"01-22-2024","description":"Work start date (MM-dd-yyyy)"},"customerPoNo":{"type":"string","example":"PO-2024-01234","description":"Customer purchase order number"},"soDescription":{"type":"string","example":"Rush calibration service - Fluke 87V Multimeter","description":"Sales order description"},"workspace":{"type":"string","example":"NA-HQ Electrical Lab","description":"Workspace name"},"jobType":{"type":"string","example":"At Lab","description":"Job type classification"}}},"ErrorResponse":{"description":"Standard error response object","type":"object","properties":{"code":{"type":"integer","example":400,"description":"HTTP status code"},"message":{"type":"string","example":"The request contains invalid fields or missing required parameters","description":"Human-readable error message"}},"required":["code","message"]},"CreatedResponse":{"description":"Standard response for successful resource creation","type":"object","properties":{"metquayId":{"type":"integer","example":10427,"description":"Unique numeric ID of the created resource"}},"required":["metquayId"]},"AuthenticationRequest":{"description":"Authentication request payload","type":"object","properties":{"accessKey":{"type":"string","example":"mqt_live_7xK2pL9nR4tW8yF3","description":"API access key provided by Metquay administrator"},"secretKey":{"type":"string","example":"sk_mqt_5hJ8mD2vB6nQ9xK4","description":"API secret key provided by Metquay administrator"}},"required":["accessKey","secretKey"]},"AuthenticationResponse":{"description":"Authentication response with access token","type":"object","properties":{"accessToken":{"type":"string","example":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzk5MjJ9.7H-bj0gF6cDxQqYqWlQqYqWlQqYqWlQqYqWlQqYqWlQqY","description":"JWT access token (valid for 15 minutes)"},"tokenType":{"type":"string","example":"bearer","description":"Token type - always \"bearer\""},"expiresIn":{"type":"integer","example":900,"description":"Token validity period in seconds"}},"required":["accessToken","tokenType"]}}}}
+{
+    "openapi": "3.0.0",
+    "servers": [
+        {
+            "url": "https://{metquayappurl}/api/v1/",
+            "description": "Customer-specific API server",
+            "variables": {
+                "metquayappurl": {
+                    "default": "metquayappurl.com",
+                    "description": "Metquay application URL(change this to your application URL)"
+                }
+            }
+        }
+    ],
+    "info": {
+        "description": "Enterprise CRUD API for managing Metquay calibration management system entities.\nProvides complete CRUD operations for customers, instrument categories, customer instruments, and works.\n\n## Authentication Flow\n1. Call `/authenticate` with your access/secret keys\n2. Receive Bearer token (valid for 15 minutes)\n3. Include token in `Authorization: Bearer {token}` header for all subsequent requests\n4. Re-authenticate when token expires\n\n## Rate Limiting\n- **100 requests per minute** per API client\n- Exceeding limit returns 429 Too Many Requests\n- Contact support for rate limit increases\n\n## Idempotency\n- PUT and DELETE operations are idempotent (safe to retry)\n- POST operations are NOT idempotent (retry may create duplicates)\n\n## Pagination\n- List endpoints support pagination via `first` and `limit` query parameters\n- `first`: Starting index (default: 0, minimum: 0)\n- `limit`: Number of records to return (default: 50)\n\n## Workspace Feature\n- `workspaceCode` is optional and only required if the workspace feature is enabled for your organization\n- If workspace feature is not enabled, omit this parameter\n",
+        "version": "1.0.0-jgi",
+        "title": "Metquay CRUD API",
+        "contact": {
+            "name": "Metquay API Support",
+            "email": "support@metquay.atlassian.net"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "tags": [
+        {
+            "name": "authenticate",
+            "description": "Authentication operations - obtain and manage access tokens"
+        },
+        {
+            "name": "customers",
+            "description": "Customer management (organizations/individuals that own instruments)"
+        },
+        {
+            "name": "instrumentcategories",
+            "description": "Instrument category management (classify instruments by type)"
+        },
+        {
+            "name": "customerinstruments",
+            "description": "Customer instrument management (devices requiring calibration)"
+        },
+        {
+            "name": "works",
+            "description": "Work management (calibration/testing/evaluation jobs)"
+        }
+    ],
+    "paths": {
+        "/authenticate": {
+            "post": {
+                "tags": [
+                    "authenticate"
+                ],
+                "summary": "Authenticate and obtain access token",
+                "operationId": "getAccessToken",
+                "description": "Authenticates client application using pre-provisioned access/secret keys.\n\n**Token Expiry:** 15 minutes (900 seconds)\n**Rate Limit:** Not applied to this endpoint\n\n**Headers Required in Subsequent Calls:**\n`Authorization: Bearer {accessToken}`\n",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthenticationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthenticationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/customers": {
+            "post": {
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Create a new customer",
+                "operationId": "createCustomer",
+                "description": "Creates a new customer record. Customers own calibration instruments.\n\n**Auto-generation:** `companyCode` auto-generated if not provided\n**Uniqueness:** `companyName` must be unique\n**Default Address:** Billing address = Primary = Certificate address\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Customer created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Get paginated list of customers",
+                "operationId": "getCustomers",
+                "description": "Retrieves a paginated list of customers.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "workspaceCode",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": false,
+                        "description": "Workspace code (optional - only required if workspace feature is enabled)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "first",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0
+                        },
+                        "required": false,
+                        "description": "Starting index for pagination"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 50
+                        },
+                        "required": false,
+                        "description": "Number of records to return (default 50)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success - returns paginated customers",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CustomerResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/customers/{metquayId}": {
+            "put": {
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Update an existing customer",
+                "operationId": "updateCustomer",
+                "description": "Updates an existing customer record.\n\n**Full Replacement:** All fields not included in request will be reset to null/default\n**Immutable Fields:** `companyCode` cannot be modified after creation\n**Type Change:** Cannot change `isPerson` (company/individual) after creation\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Customer updated successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Delete a customer",
+                "operationId": "deleteCustomer",
+                "description": "Permanently deletes a customer record.\n\n**Restrictions - Cannot delete if customer has:**\n- Any associated instruments\n- Any active or historical works\n\n**Alternative:** Set `isInactive: true` instead of deleting\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Customer deleted successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/instrument-categories": {
+            "post": {
+                "tags": [
+                    "instrumentcategories"
+                ],
+                "summary": "Create a new instrument category",
+                "operationId": "createInstrumentCategory",
+                "description": "Creates a new instrument category.\n\n**Uniqueness:** Category `name` must be globally unique (case-insensitive)\n**Dependency:** Cannot delete categories with associated instruments\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InstrumentCategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Instrument category created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/instrument-categories/{metquayId}": {
+            "put": {
+                "tags": [
+                    "instrumentcategories"
+                ],
+                "summary": "Update an instrument category",
+                "operationId": "updateInstrumentCategory",
+                "description": "Updates an existing instrument category.\n\n**Restriction:** Cannot update if category has associated instruments\n**Workaround:** \n1. Reassign instruments to different category\n2. Update category name\n3. Reassign instruments back\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InstrumentCategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Instrument category updated successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "instrumentcategories"
+                ],
+                "summary": "Delete an instrument category",
+                "operationId": "deleteInstrumentCategory",
+                "description": "Permanently deletes an instrument category.\n\n**Required:** No instruments can be assigned to this category\n**Action:** Reassign or delete all instruments in this category first\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Instrument category deleted successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/customer-instrument-details": {
+            "post": {
+                "tags": [
+                    "customerinstruments"
+                ],
+                "summary": "Register a new customer instrument",
+                "operationId": "createCustomerInstrument",
+                "description": "Registers a new instrument owned by a customer.\n\n**Required References:**\n- Existing customer (`companyId`)\n- Existing instrument category (`instrumentCategoryName`)\n\n**Calibration Scheduling:**\nIf `calibrationFrequency` + `calibrationFrequencySpan` provided:\n- `dueDate` auto-calculated from `calibratedDate` (defaults to creation date)\n\n**Uniqueness:** Serial/Tag number combinations should be unique per customer\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerInstrumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Customer instrument created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "customerinstruments"
+                ],
+                "summary": "Get paginated list of customer instruments",
+                "operationId": "getCustomerInstruments",
+                "description": "Retrieves a paginated list of customer instruments.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "workspaceCode",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": false,
+                        "description": "Workspace code (optional - only required if workspace feature is enabled)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "first",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0
+                        },
+                        "required": false,
+                        "description": "Starting index for pagination"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 50
+                        },
+                        "required": false,
+                        "description": "Number of records to return (default 50)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success - returns paginated customer instruments",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CustomerInstrumentResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/customer-instrument-details/{metquayId}": {
+            "put": {
+                "tags": [
+                    "customerinstruments"
+                ],
+                "summary": "Update a customer instrument",
+                "operationId": "updateCustomerInstrument",
+                "description": "Updates an existing customer instrument.\n\n**Full Replacement:** All fields not included are reset\n**Ownership Change:** Changing `companyId` transfers instrument to another customer\n**Category Change:** May affect calibration procedures and pricing\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerInstrumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Customer instrument updated successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "customerinstruments"
+                ],
+                "summary": "Delete a customer instrument",
+                "operationId": "deleteCustomerInstrument",
+                "description": "Permanently deletes a customer instrument.\n\n**Restrictions - Cannot delete if instrument has:**\n- Any associated works (active or historical)\n- Any child instruments (parentInstrumentId references this instrument)\n\n**Alternative:** Set `isActive: false` instead of deleting\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Customer instrument deleted successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/works": {
+            "post": {
+                "tags": [
+                    "works"
+                ],
+                "summary": "Create a new work",
+                "operationId": "createWork",
+                "description": "Creates a calibration, testing, or evaluation work.\n\n**Work Types (`workFlowType`):**\n- `Calibration`: Adjust and verify accuracy (default)\n- `Testing`: Verify performance without adjustment\n- `Evaluation`: Assess condition and recommend actions\n\n**Auto-numbering:** `workNo` auto-generated if not provided\n**Required Reference:** Existing customer instrument (`customerInstrumentId`)\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Work created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "works"
+                ],
+                "summary": "Get paginated list of works",
+                "operationId": "getWorks",
+                "description": "Retrieves a paginated list of works.\n\n**Pagination:**\n- Use `first` and `limit` to control result set\n\n**Workspace:**\n- `workspaceCode` is optional - only include if workspace feature is enabled\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "workspaceCode",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": false,
+                        "description": "Workspace code (optional - only required if workspace feature is enabled)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "first",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0
+                        },
+                        "required": false,
+                        "description": "Starting index for pagination"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 50
+                        },
+                        "required": false,
+                        "description": "Number of records to return (default 50)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success - returns paginated works",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WorkResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/works/{metquayId}": {
+            "put": {
+                "tags": [
+                    "works"
+                ],
+                "summary": "Update an existing work",
+                "operationId": "updateWork",
+                "description": "Updates an existing work.\n\n**Immutable Fields:** `workNo` cannot be changed\n**Status Restriction:** Cannot modify completed or cancelled works\n**Reassignment:** Changing `customerInstrumentId` reassigns work to different instrument\n",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/MetquayId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Work updated successfully"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/409"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/422"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Token valid for 15 minutes.\nHeader format: `Authorization: Bearer {accessToken}`\n"
+            }
+        },
+        "parameters": {
+            "MetquayId": {
+                "in": "path",
+                "name": "metquayId",
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "required": true,
+                "description": "Numeric ID of the resource in Metquay system",
+                "example": 10427
+            }
+        },
+        "responses": {
+            "400": {
+                "description": "Bad request - validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 400,
+                            "message": "The request contains invalid fields or missing required parameters"
+                        }
+                    }
+                }
+            },
+            "401": {
+                "description": "Unauthorized - missing or invalid token",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 401,
+                            "message": "Invalid or expired access token. Please re-authenticate."
+                        }
+                    }
+                }
+            },
+            "403": {
+                "description": "Forbidden - insufficient permissions",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 403,
+                            "message": "You don't have permission to access this resource"
+                        }
+                    }
+                }
+            },
+            "404": {
+                "description": "Not found - resource does not exist",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 404,
+                            "message": "The requested resource with ID 10427 does not exist"
+                        }
+                    }
+                }
+            },
+            "409": {
+                "description": "Conflict - duplicate or dependency violation",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 409,
+                            "message": "Resource cannot be saved because it violates unique constraints. A customer with this company code already exists."
+                        }
+                    }
+                }
+            },
+            "422": {
+                "description": "Unprocessable entity - business rule violation",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 422,
+                            "message": "Cannot process request since one or more validation failed. Company name is required."
+                        }
+                    }
+                }
+            },
+            "429": {
+                "description": "Too Many Requests - rate limit exceeded (100/minute)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 429,
+                            "message": "API rate limit of 100 requests per minute exceeded. Please try again in 30 seconds."
+                        }
+                    }
+                }
+            },
+            "500": {
+                "description": "Internal server error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                            "code": 500,
+                            "message": "An unexpected error occurred. Our team has been notified. Reference ID: ERR-12345-67890"
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "CustomerRequest": {
+                "description": "Request payload for creating or updating a customer",
+                "type": "object",
+                "required": [
+                    "companyName"
+                ],
+                "properties": {
+                    "parentCompanyCode": {
+                        "type": "string",
+                        "example": "M3-HQ",
+                        "description": "Parent company code (if this customer is a subsidiary)"
+                    },
+                    "companyCode": {
+                        "type": "string",
+                        "example": "MCS-001",
+                        "description": "Unique identifier for the customer. Auto-generated if not provided."
+                    },
+                    "isInactive": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Customer status - false for active, true for inactive",
+                        "default": false
+                    },
+                    "companyName": {
+                        "type": "string",
+                        "example": "Metquay Inc.",
+                        "description": "Legal name of the customer organization"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "accounts@metquay.com",
+                        "description": "Primary contact email address"
+                    },
+                    "website": {
+                        "type": "string",
+                        "example": "https://www.metquay.com",
+                        "description": "Customer website URL"
+                    },
+                    "paymentMethod": {
+                        "type": "string",
+                        "example": "Bank Transfer",
+                        "description": "Preferred payment method"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+1-312-555-0123",
+                        "description": "Primary phone number"
+                    },
+                    "mobile": {
+                        "type": "string",
+                        "example": "+1-312-555-0124",
+                        "description": "Mobile phone number"
+                    },
+                    "fax": {
+                        "type": "string",
+                        "example": "+1-312-555-0125",
+                        "description": "Fax number"
+                    },
+                    "other": {
+                        "type": "string",
+                        "example": "+1-312-555-0126",
+                        "description": "Alternate phone number"
+                    },
+                    "activateAlerts": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Enable automated alert notifications",
+                        "default": false
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code (required only if workspace feature is enabled)"
+                    },
+                    "hasBillingAddress": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if customer has a billing address",
+                        "default": false
+                    },
+                    "billingAddr1": {
+                        "type": "string",
+                        "example": "123 Innovation Drive",
+                        "description": "Billing address line 1"
+                    },
+                    "billingAddr2": {
+                        "type": "string",
+                        "example": "Suite 400",
+                        "description": "Billing address line 2"
+                    },
+                    "billingCity": {
+                        "type": "string",
+                        "example": "Chicago",
+                        "description": "Billing address city"
+                    },
+                    "billingState": {
+                        "type": "string",
+                        "example": "Illinois",
+                        "description": "Billing address state/province"
+                    },
+                    "billingZip": {
+                        "type": "string",
+                        "example": "60606-1234",
+                        "description": "Billing address postal/zip code"
+                    },
+                    "billingCountry": {
+                        "type": "string",
+                        "example": "United States",
+                        "description": "Billing address country"
+                    },
+                    "billingPhone1": {
+                        "type": "string",
+                        "example": "+1-312-555-0130",
+                        "description": "Billing department phone number"
+                    },
+                    "billingPhone2": {
+                        "type": "string",
+                        "example": "+1-312-555-0131",
+                        "description": "Billing department alternate phone"
+                    },
+                    "hasShippingAddress": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if customer has a shipping address",
+                        "default": false
+                    },
+                    "shippingAddr1": {
+                        "type": "string",
+                        "example": "456 Distribution Parkway",
+                        "description": "Shipping address line 1"
+                    },
+                    "shippingAddr2": {
+                        "type": "string",
+                        "example": "Building B, Dock 7",
+                        "description": "Shipping address line 2"
+                    },
+                    "shippingCity": {
+                        "type": "string",
+                        "example": "Elk Grove Village",
+                        "description": "Shipping address city"
+                    },
+                    "shippingState": {
+                        "type": "string",
+                        "example": "Illinois",
+                        "description": "Shipping address state/province"
+                    },
+                    "shippingZip": {
+                        "type": "string",
+                        "example": "60007-2345",
+                        "description": "Shipping address postal/zip code"
+                    },
+                    "shippingCountry": {
+                        "type": "string",
+                        "example": "United States",
+                        "description": "Shipping address country"
+                    },
+                    "customerSpecificRequirements": {
+                        "type": "string",
+                        "example": "All deliveries require forklift access and must be scheduled 24 hours in advance. Contact warehouse manager at ext. 4500.",
+                        "description": "Customer specific delivery or service requirements"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Premium support customer since 2018. Monthly calibration volume averages 50-75 instruments. Primary contact: John Smith (john.smith@metquay.com)",
+                        "description": "General notes about the customer"
+                    },
+                    "shortName": {
+                        "type": "string",
+                        "example": "Metquay",
+                        "description": "Short name or alias for display purposes"
+                    },
+                    "isTaxable": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if customer is subject to tax",
+                        "default": true
+                    },
+                    "taxCode": {
+                        "type": "string",
+                        "example": "TAX-EXEMPT-IL-2024",
+                        "description": "Tax exemption code or tax ID"
+                    },
+                    "openingBalance": {
+                        "type": "number",
+                        "format": "double",
+                        "example": 12500.75,
+                        "description": "Opening account balance"
+                    }
+                }
+            },
+            "InstrumentCategoryRequest": {
+                "description": "Request payload for creating or updating an instrument category",
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Digital Multimeter",
+                        "description": "Instrument category name - must be unique across the system"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Electronic test equipment used to measure voltage, current, and resistance. Includes both benchtop and handheld models.",
+                        "description": "Detailed description of the instrument category"
+                    }
+                }
+            },
+            "CustomerInstrumentRequest": {
+                "description": "Request payload for creating or updating a customer instrument",
+                "type": "object",
+                "required": [
+                    "name",
+                    "companyId",
+                    "instrumentCategoryName"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Fluke 87V Industrial Digital Multimeter",
+                        "description": "Descriptive name of the instrument"
+                    },
+                    "companyId": {
+                        "type": "string",
+                        "example": "MCS-001",
+                        "description": "Customer ID or code that owns this instrument"
+                    },
+                    "serialNo": {
+                        "type": "string",
+                        "example": "FLK-87V-2024-4582",
+                        "description": "Manufacturer's unique serial number"
+                    },
+                    "tagNo": {
+                        "type": "string",
+                        "example": "METER-LAB-87V-042",
+                        "description": "Internal asset tag or tracking number"
+                    },
+                    "make": {
+                        "type": "string",
+                        "example": "Fluke Corporation",
+                        "description": "Instrument manufacturer or brand"
+                    },
+                    "model": {
+                        "type": "string",
+                        "example": "87V Max",
+                        "description": "Manufacturer's model designation"
+                    },
+                    "range": {
+                        "type": "string",
+                        "example": "0-1000V DC, 0-750V AC, 0-10A, 0-50MΩ",
+                        "description": "Measurement range specifications"
+                    },
+                    "instrumentCategoryName": {
+                        "type": "string",
+                        "example": "Digital Multimeter",
+                        "description": "Category this instrument belongs to"
+                    },
+                    "calibrationFrequency": {
+                        "type": "string",
+                        "example": "180",
+                        "description": "Numerical value for calibration frequency"
+                    },
+                    "calibrationFrequencySpan": {
+                        "type": "string",
+                        "example": "DAY",
+                        "description": "Time unit for calibration frequency",
+                        "enum": [
+                            "DAY",
+                            "WEEK",
+                            "MONTH",
+                            "YEAR"
+                        ]
+                    },
+                    "instrumentStatus": {
+                        "type": "string",
+                        "example": "RECEIVED",
+                        "description": "Current operational status of the instrument"
+                    },
+                    "lastReceivedDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "01-15-2024 09:30:00",
+                        "description": "Date and time when instrument was last received"
+                    },
+                    "lastDeliveredDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "01-20-2024 16:45:00",
+                        "description": "Date and time when instrument was last delivered"
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code (required only if workspace feature is enabled)"
+                    }
+                }
+            },
+            "WorkRequest": {
+                "description": "Request payload for creating or updating a work",
+                "type": "object",
+                "required": [
+                    "customerInstrumentId"
+                ],
+                "properties": {
+                    "customerInstrumentId": {
+                        "type": "integer",
+                        "example": 8234,
+                        "description": "Numeric ID of the customer instrument being calibrated/tested"
+                    },
+                    "inDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "01-22-2024 10:15:00",
+                        "description": "Date and time when instrument was received for work"
+                    },
+                    "accreditation": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "true for ISO 17025 accredited work, false for non-accredited",
+                        "default": false
+                    },
+                    "complianceRequired": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "true if regulatory compliance verification is required",
+                        "default": false
+                    },
+                    "siteJob": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "true for on-site work at customer facility, false for in-lab",
+                        "default": false
+                    },
+                    "outsource": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "true if work is subcontracted to external provider",
+                        "default": false
+                    },
+                    "customerSpecificRequirements": {
+                        "type": "string",
+                        "example": "Calibration required at 5 specific points: -20°C, 0°C, 25°C, 50°C, 80°C. Certificate must include measurement uncertainty at 95% confidence level.",
+                        "description": "Special requirements or instructions from customer"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "example": "Full calibration per manufacturer specifications. 5-point verification across all ranges. Includes NIST traceable certificate.",
+                        "description": "Detailed description of work to be performed"
+                    },
+                    "certificateAddress": {
+                        "type": "string",
+                        "example": "Metquay Inc., 123 Innovation Drive, Suite 400, Chicago, IL 60606-1234, United States",
+                        "description": "Complete address to be printed on calibration certificate"
+                    },
+                    "remarks": {
+                        "type": "string",
+                        "example": "Rush order requested by customer. Standard 5-day turnaround reduced to 3 days. Quote #Q-2024-0123 approved.",
+                        "description": "General remarks about the work order"
+                    },
+                    "workFlowType": {
+                        "type": "string",
+                        "example": "Calibration",
+                        "description": "Type of workflow to apply",
+                        "enum": [
+                            "Calibration",
+                            "Testing",
+                            "Evaluation"
+                        ],
+                        "default": "Calibration"
+                    },
+                    "deliveryDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "01-29-2024 17:00:00",
+                        "description": "Target completion and delivery date"
+                    },
+                    "salesOrderNo": {
+                        "type": "string",
+                        "example": "SO-2024-04567",
+                        "description": "Customer purchase order or sales order reference"
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code (required only if workspace feature is enabled)"
+                    },
+                    "subConDetails": {
+                        "type": "string",
+                        "example": "High-voltage calibration subcontracted to PowerCal Labs. Expected return date: 01-26-2024. Subcontractor PO #PO-2024-8910.",
+                        "description": "Additional details for subcontracted work"
+                    }
+                }
+            },
+            "CustomerResponse": {
+                "description": "Customer response object",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 10427,
+                        "description": "Unique Metquay ID of the customer"
+                    },
+                    "parentCompanyCode": {
+                        "type": "string",
+                        "example": "M3-HQ",
+                        "description": "Parent company code (if this customer is a subsidiary)"
+                    },
+                    "companyCode": {
+                        "type": "string",
+                        "example": "MCS-001",
+                        "description": "Unique identifier for the customer"
+                    },
+                    "isInactive": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Customer status - false for active, true for inactive"
+                    },
+                    "companyName": {
+                        "type": "string",
+                        "example": "Metquay Inc.",
+                        "description": "Legal name of the customer organization"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "accounts@metquay.com",
+                        "description": "Primary contact email address"
+                    },
+                    "website": {
+                        "type": "string",
+                        "example": "https://www.metquay.com",
+                        "description": "Customer website URL"
+                    },
+                    "paymentMethod": {
+                        "type": "string",
+                        "example": "Bank Transfer",
+                        "description": "Preferred payment method"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+1-312-555-0123",
+                        "description": "Primary phone number"
+                    },
+                    "mobile": {
+                        "type": "string",
+                        "example": "+1-312-555-0124",
+                        "description": "Mobile phone number"
+                    },
+                    "fax": {
+                        "type": "string",
+                        "example": "+1-312-555-0125",
+                        "description": "Fax number"
+                    },
+                    "other": {
+                        "type": "string",
+                        "example": "+1-312-555-0126",
+                        "description": "Alternate phone number"
+                    },
+                    "activateAlerts": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Alert notification status"
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code"
+                    },
+                    "hasBillingAddress": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if billing address exists"
+                    },
+                    "billingAddr1": {
+                        "type": "string",
+                        "example": "123 Innovation Drive",
+                        "description": "Billing address line 1"
+                    },
+                    "billingAddr2": {
+                        "type": "string",
+                        "example": "Suite 400",
+                        "description": "Billing address line 2"
+                    },
+                    "billingCity": {
+                        "type": "string",
+                        "example": "Chicago",
+                        "description": "Billing address city"
+                    },
+                    "billingState": {
+                        "type": "string",
+                        "example": "Illinois",
+                        "description": "Billing address state/province"
+                    },
+                    "billingZip": {
+                        "type": "string",
+                        "example": "60606-1234",
+                        "description": "Billing address postal/zip code"
+                    },
+                    "billingCountry": {
+                        "type": "string",
+                        "example": "United States",
+                        "description": "Billing address country"
+                    },
+                    "billingPhone1": {
+                        "type": "string",
+                        "example": "+1-312-555-0130",
+                        "description": "Billing department phone number"
+                    },
+                    "billingPhone2": {
+                        "type": "string",
+                        "example": "+1-312-555-0131",
+                        "description": "Billing department alternate phone"
+                    },
+                    "hasShippingAddress": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if shipping address exists"
+                    },
+                    "shippingAddr1": {
+                        "type": "string",
+                        "example": "456 Distribution Parkway",
+                        "description": "Shipping address line 1"
+                    },
+                    "shippingAddr2": {
+                        "type": "string",
+                        "example": "Building B, Dock 7",
+                        "description": "Shipping address line 2"
+                    },
+                    "shippingCity": {
+                        "type": "string",
+                        "example": "Elk Grove Village",
+                        "description": "Shipping address city"
+                    },
+                    "shippingState": {
+                        "type": "string",
+                        "example": "Illinois",
+                        "description": "Shipping address state/province"
+                    },
+                    "shippingZip": {
+                        "type": "string",
+                        "example": "60007-2345",
+                        "description": "Shipping address postal/zip code"
+                    },
+                    "shippingCountry": {
+                        "type": "string",
+                        "example": "United States",
+                        "description": "Shipping address country"
+                    },
+                    "customerSpecificRequirements": {
+                        "type": "string",
+                        "example": "All deliveries require forklift access and must be scheduled 24 hours in advance. Contact warehouse manager at ext. 4500.",
+                        "description": "Customer specific delivery or service requirements"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Premium support customer since 2018. Monthly calibration volume averages 50-75 instruments. Primary contact: John Smith (john.smith@metquay.com)",
+                        "description": "General notes about the customer"
+                    },
+                    "shortName": {
+                        "type": "string",
+                        "example": "Metquay",
+                        "description": "Short name or alias for display purposes"
+                    },
+                    "isTaxable": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if customer is subject to tax"
+                    },
+                    "taxCode": {
+                        "type": "string",
+                        "example": "TAX-EXEMPT-IL-2024",
+                        "description": "Tax exemption code or tax ID"
+                    },
+                    "openingBalance": {
+                        "type": "number",
+                        "format": "double",
+                        "example": 12500.75,
+                        "description": "Opening account balance"
+                    }
+                }
+            },
+            "CustomerInstrumentResponse": {
+                "description": "Customer instrument response object",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 8234,
+                        "description": "Unique Metquay ID of the instrument"
+                    },
+                    "barcode": {
+                        "type": "string",
+                        "example": "MQ-87V-2024-04582",
+                        "description": "Internal barcode identifier"
+                    },
+                    "companyName": {
+                        "type": "string",
+                        "example": "Metquay Inc.",
+                        "description": "Name of the customer who owns the instrument"
+                    },
+                    "instrumentName": {
+                        "type": "string",
+                        "example": "Fluke 87V Industrial Digital Multimeter",
+                        "description": "Descriptive name of the instrument"
+                    },
+                    "instrumentCategory": {
+                        "type": "string",
+                        "example": "Digital Multimeter",
+                        "description": "Category of the instrument"
+                    },
+                    "itemName": {
+                        "type": "string",
+                        "example": "Fluke 87V Digital Multimeter",
+                        "description": "Associated catalog item name"
+                    },
+                    "make": {
+                        "type": "string",
+                        "example": "Fluke Corporation",
+                        "description": "Instrument manufacturer"
+                    },
+                    "model": {
+                        "type": "string",
+                        "example": "87V Max",
+                        "description": "Instrument model"
+                    },
+                    "range": {
+                        "type": "string",
+                        "example": "0-1000V DC, 0-750V AC, 0-10A, 0-50MΩ",
+                        "description": "Measurement range"
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "True RMS Digital Multimeter",
+                        "description": "Instrument type/variant"
+                    },
+                    "tolerance": {
+                        "type": "string",
+                        "example": "±0.05% basic DC accuracy",
+                        "description": "Accuracy tolerance specification"
+                    },
+                    "serialNo": {
+                        "type": "string",
+                        "example": "FLK-87V-2024-4582",
+                        "description": "Manufacturer serial number"
+                    },
+                    "tagNo": {
+                        "type": "string",
+                        "example": "METER-LAB-87V-042",
+                        "description": "Internal asset tag number"
+                    },
+                    "controlNo": {
+                        "type": "string",
+                        "example": "CTL-2024-042",
+                        "description": "Quality control tracking number"
+                    },
+                    "calibrationFrequency": {
+                        "type": "string",
+                        "example": "180",
+                        "description": "Calibration frequency value"
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code"
+                    },
+                    "calibrationFrequencySpan": {
+                        "type": "string",
+                        "example": "DAY",
+                        "description": "Calibration frequency time unit",
+                        "enum": [
+                            "DAY",
+                            "WEEK",
+                            "MONTH",
+                            "YEAR"
+                        ]
+                    },
+                    "calibratedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Most recent calibration date (MM-dd-yyyy)"
+                    },
+                    "dueDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "07-20-2024",
+                        "description": "Next calibration due date (MM-dd-yyyy)"
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Instrument active status"
+                    },
+                    "parentTagNo": {
+                        "type": "string",
+                        "example": "SYSTEM-87V-MAIN-001",
+                        "description": "Parent instrument tag number (for component instruments)"
+                    },
+                    "departmentName": {
+                        "type": "string",
+                        "example": "Metrology Lab - Electrical",
+                        "description": "Department or location where instrument is assigned"
+                    },
+                    "verificationDueDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "07-15-2024",
+                        "description": "Intermediate verification due date (MM-dd-yyyy)"
+                    },
+                    "calibrationCost": {
+                        "type": "number",
+                        "format": "double",
+                        "example": 185.5,
+                        "description": "Cost of calibration service"
+                    },
+                    "isCalibratedExternally": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Indicates if calibration is performed by external vendor"
+                    },
+                    "calibrationVendor": {
+                        "type": "string",
+                        "example": "Metquay Calibration Services",
+                        "description": "Name of calibration service provider"
+                    },
+                    "remarks": {
+                        "type": "string",
+                        "example": "High-precision instrument for ISO 17025 accredited calibrations. Requires special handling.",
+                        "description": "General remarks about the instrument"
+                    },
+                    "instrumentNotes": {
+                        "type": "string",
+                        "example": "Battery replaced on 12-15-2023. Firmware updated to v2.1. Next firmware check due: 06-2024.",
+                        "description": "Internal maintenance notes"
+                    },
+                    "isMobile": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if instrument is portable for field use"
+                    },
+                    "isCalibrationRequired": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if periodic calibration is required"
+                    },
+                    "lastReceivedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Date instrument was last received (MM-dd-yyyy)"
+                    },
+                    "lastDeliveredDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-20-2024",
+                        "description": "Date instrument was last delivered (MM-dd-yyyy)"
+                    },
+                    "calibrationStatus": {
+                        "type": "string",
+                        "example": "Good",
+                        "description": "Current calibration status"
+                    },
+                    "receivedCondition": {
+                        "type": "string",
+                        "example": "Good",
+                        "description": "Condition assessment when received"
+                    },
+                    "auditedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Date of last quality audit (MM-dd-yyyy)"
+                    },
+                    "certificateUrl": {
+                        "type": "string",
+                        "example": "https://certificates.metquay.com/FLK-87V-2024-4582-20240122.pdf",
+                        "description": "URL to the latest calibration certificate"
+                    },
+                    "projectNames": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "ISO-17025-2024-Upgrade",
+                            "Lab-Certification-Q2",
+                            "Customer-Project-Acme-001"
+                        ],
+                        "description": "Associated project names or codes"
+                    }
+                }
+            },
+            "WorkResponse": {
+                "description": "Work response object",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 21568,
+                        "description": "Unique Metquay ID of the work"
+                    },
+                    "workNo": {
+                        "type": "string",
+                        "example": "CAL-2024-021568",
+                        "description": "Unique work order number"
+                    },
+                    "customerInstrumentId": {
+                        "type": "integer",
+                        "example": 8234,
+                        "description": "Numeric ID of the customer instrument"
+                    },
+                    "inDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Date instrument was received"
+                    },
+                    "accreditation": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if work is ISO 17025 accredited"
+                    },
+                    "complianceRequired": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates if regulatory compliance verification is required"
+                    },
+                    "siteJob": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Indicates if work was performed on-site"
+                    },
+                    "outsource": {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Indicates if work was subcontracted"
+                    },
+                    "customerSpecificRequirements": {
+                        "type": "string",
+                        "example": "Calibration required at 5 specific points: -20°C, 0°C, 25°C, 50°C, 80°C. Certificate must include measurement uncertainty at 95% confidence level.",
+                        "description": "Customer special requirements"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "example": "Full calibration per manufacturer specifications. 5-point verification across all ranges. Includes NIST traceable certificate.",
+                        "description": "Detailed scope of work"
+                    },
+                    "certificateAddress": {
+                        "type": "string",
+                        "example": "Metquay Inc., 123 Innovation Drive, Suite 400, Chicago, IL 60606-1234, United States",
+                        "description": "Complete address printed on certificate"
+                    },
+                    "remarks": {
+                        "type": "string",
+                        "example": "Rush order requested by customer. Standard 5-day turnaround reduced to 3 days. Quote #Q-2024-0123 approved.",
+                        "description": "Work order remarks"
+                    },
+                    "workFlowType": {
+                        "type": "string",
+                        "example": "Calibration",
+                        "description": "Type of workflow performed"
+                    },
+                    "deliveryDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-29-2024",
+                        "description": "Target delivery date"
+                    },
+                    "salesOrderNo": {
+                        "type": "string",
+                        "example": "SO-2024-04567",
+                        "description": "Customer purchase order or sales order reference"
+                    },
+                    "workspaceCode": {
+                        "type": "string",
+                        "example": "NA-HQ",
+                        "description": "Workspace code"
+                    },
+                    "subConDetails": {
+                        "type": "string",
+                        "example": "High-voltage calibration subcontracted to PowerCal Labs. Returned on 01-26-2024. Subcontractor PO #PO-2024-8910.",
+                        "description": "Subcontractor details if outsourced"
+                    },
+                    "customer": {
+                        "type": "string",
+                        "example": "Metquay Inc.",
+                        "description": "Customer name"
+                    },
+                    "instrumentName": {
+                        "type": "string",
+                        "example": "Fluke 87V Industrial Digital Multimeter",
+                        "description": "Instrument name"
+                    },
+                    "instrumentSerialNo": {
+                        "type": "string",
+                        "example": "FLK-87V-2024-4582",
+                        "description": "Instrument serial number"
+                    },
+                    "instrumentTagNo": {
+                        "type": "string",
+                        "example": "METER-LAB-87V-042",
+                        "description": "Instrument tag number"
+                    },
+                    "instrumentBarcode": {
+                        "type": "string",
+                        "example": "MQ-87V-2024-04582",
+                        "description": "Instrument barcode"
+                    },
+                    "instrumentCategoryName": {
+                        "type": "string",
+                        "example": "Digital Multimeter",
+                        "description": "Instrument category"
+                    },
+                    "itemDescription": {
+                        "type": "string",
+                        "example": "Fluke 87V Max Digital Multimeter with NIST certification",
+                        "description": "Catalog item description"
+                    },
+                    "departmentName": {
+                        "type": "string",
+                        "example": "Metrology Lab - Electrical",
+                        "description": "Department performing the work"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Finished",
+                        "description": "Current work status"
+                    },
+                    "reportType": {
+                        "type": "string",
+                        "example": "Certificate",
+                        "description": "Type of report/certificate generated"
+                    },
+                    "accreditationType": {
+                        "type": "string",
+                        "example": "Accredited",
+                        "description": "Accreditation standard applied"
+                    },
+                    "procedure": {
+                        "type": "string",
+                        "example": "FLUKE-87V-CAL-PROC-Rev4",
+                        "description": "Calibration procedure used"
+                    },
+                    "technician": {
+                        "type": "string",
+                        "example": "Sandeep Nair",
+                        "description": "Primary technician assigned"
+                    },
+                    "workDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Date work was performed (MM-dd-yyyy)"
+                    },
+                    "dueDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-29-2024",
+                        "description": "Original due date (MM-dd-yyyy)"
+                    },
+                    "revisionNo": {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "Revision number of the work order"
+                    },
+                    "certificateNo": {
+                        "type": "string",
+                        "example": "MQ-CAL-2024-021568",
+                        "description": "Generated certificate number"
+                    },
+                    "finishedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-26-2024",
+                        "description": "Date work was completed (MM-dd-yyyy)"
+                    },
+                    "finishedBy": {
+                        "type": "string",
+                        "example": "Sandeep Nair",
+                        "description": "Technician who completed the work"
+                    },
+                    "salesPerson": {
+                        "type": "string",
+                        "example": "Michael Chen",
+                        "description": "Sales representative"
+                    },
+                    "recommendedDueDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "07-20-2024",
+                        "description": "Recommended next calibration due date (MM-dd-yyyy)"
+                    },
+                    "calibratedDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-26-2024",
+                        "description": "Actual calibration date (MM-dd-yyyy)"
+                    },
+                    "workStartDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "01-22-2024",
+                        "description": "Work start date (MM-dd-yyyy)"
+                    },
+                    "customerPoNo": {
+                        "type": "string",
+                        "example": "PO-2024-01234",
+                        "description": "Customer purchase order number"
+                    },
+                    "soDescription": {
+                        "type": "string",
+                        "example": "Rush calibration service - Fluke 87V Multimeter",
+                        "description": "Sales order description"
+                    },
+                    "workspace": {
+                        "type": "string",
+                        "example": "NA-HQ Electrical Lab",
+                        "description": "Workspace name"
+                    },
+                    "jobType": {
+                        "type": "string",
+                        "example": "At Lab",
+                        "description": "Job type classification"
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "description": "Standard error response object",
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "example": 400,
+                        "description": "HTTP status code"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "The request contains invalid fields or missing required parameters",
+                        "description": "Human-readable error message"
+                    }
+                },
+                "required": [
+                    "code",
+                    "message"
+                ]
+            },
+            "CreatedResponse": {
+                "description": "Standard response for successful resource creation",
+                "type": "object",
+                "properties": {
+                    "metquayId": {
+                        "type": "integer",
+                        "example": 10427,
+                        "description": "Unique numeric ID of the created resource"
+                    }
+                },
+                "required": [
+                    "metquayId"
+                ]
+            },
+            "AuthenticationRequest": {
+                "description": "Authentication request payload",
+                "type": "object",
+                "properties": {
+                    "accessKey": {
+                        "type": "string",
+                        "example": "mqt_live_7xK2pL9nR4tW8yF3",
+                        "description": "API access key provided by Metquay administrator"
+                    },
+                    "secretKey": {
+                        "type": "string",
+                        "example": "sk_mqt_5hJ8mD2vB6nQ9xK4",
+                        "description": "API secret key provided by Metquay administrator"
+                    }
+                },
+                "required": [
+                    "accessKey",
+                    "secretKey"
+                ]
+            },
+            "AuthenticationResponse": {
+                "description": "Authentication response with access token",
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzk5MjJ9.7H-bj0gF6cDxQqYqWlQqYqWlQqYqWlQqYqWlQqYqWlQqY",
+                        "description": "JWT access token (valid for 15 minutes)"
+                    },
+                    "tokenType": {
+                        "type": "string",
+                        "example": "bearer",
+                        "description": "Token type - always \"bearer\""
+                    },
+                    "expiresIn": {
+                        "type": "integer",
+                        "example": 900,
+                        "description": "Token validity period in seconds"
+                    }
+                },
+                "required": [
+                    "accessToken",
+                    "tokenType"
+                ]
+            }
+        }
+    }
+}
