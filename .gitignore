@@ -73,3 +73,6 @@ target/
 
 # Temporary Claude files
 tmpclaude-*-cwd
+
+# Temporary spec fetch
+.fetched-spec.json
