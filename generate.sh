@@ -13,6 +13,8 @@ npx @openapitools/openapi-generator-cli generate \
   --additional-properties=packageName=openapi_client \
   -o .
 
+python generate_integration_tests.py
+
 ruff check . --fix
 
 isort .
