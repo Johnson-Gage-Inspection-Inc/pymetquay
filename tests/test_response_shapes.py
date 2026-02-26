@@ -21,7 +21,9 @@ import pytest
 
 from openapi_client.api_response import ApiResponse
 from openapi_client.exceptions import ApiException
-from openapi_client.models.customer_instrument_response import CustomerInstrumentResponse
+from openapi_client.models.customer_instrument_response import (
+    CustomerInstrumentResponse,
+)
 from openapi_client.models.customer_response import CustomerResponse
 from openapi_client.models.work_response import WorkResponse
 from tests.conftest import requires_credentials
