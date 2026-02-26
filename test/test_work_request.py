@@ -64,10 +64,10 @@ class TestWorkRequest:
     def test_defaults_are_correct(self):
         """Test that fields with explicit defaults are set correctly."""
         obj = WorkRequest(**self._REQUIRED_KWARGS)
-        assert obj.accreditation == False
-        assert obj.compliance_required == False
-        assert obj.site_job == False
-        assert obj.outsource == False
+        assert obj.accreditation is False
+        assert obj.compliance_required is False
+        assert obj.site_job is False
+        assert obj.outsource is False
         assert obj.work_flow_type == "Calibration"
 
     # ------------------------------------------------------------------ #

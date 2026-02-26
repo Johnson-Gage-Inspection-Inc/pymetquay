@@ -108,11 +108,11 @@ class TestCustomerRequest:
     def test_defaults_are_correct(self):
         """Test that fields with explicit defaults are set correctly."""
         obj = CustomerRequest(**self._REQUIRED_KWARGS)
-        assert obj.is_inactive == False
-        assert obj.activate_alerts == False
-        assert obj.has_billing_address == False
-        assert obj.has_shipping_address == False
-        assert obj.is_taxable == True
+        assert obj.is_inactive is False
+        assert obj.activate_alerts is False
+        assert obj.has_billing_address is False
+        assert obj.has_shipping_address is False
+        assert obj.is_taxable is True
 
     # ------------------------------------------------------------------ #
     #  Serialization

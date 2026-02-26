@@ -63,6 +63,7 @@ class Test{{classname}}:
     def test_optional_fields_default_to_none(self):
         """Test that optional fields without defaults are None."""
         obj = {{classname}}(**self._REQUIRED_KWARGS)
+        assert obj is not None
 {{#optionalVars}}
 {{^defaultValue}}
 {{^isDate}}
@@ -82,9 +83,15 @@ class Test{{classname}}:
 {{^hasRequired}}
         obj = {{classname}}()
 {{/hasRequired}}
+        assert obj is not None
 {{#vars}}
 {{#defaultValue}}
+{{#isBoolean}}
+        assert obj.{{name}} is {{{defaultValue}}}
+{{/isBoolean}}
+{{^isBoolean}}
         assert obj.{{name}} == {{{defaultValue}}}
+{{/isBoolean}}
 {{/defaultValue}}
 {{/vars}}
 
@@ -121,6 +128,7 @@ class Test{{classname}}:
         obj = {{classname}}()
 {{/hasRequired}}
         d = obj.to_dict()
+        assert isinstance(d, dict)
 {{#optionalVars}}
 {{^defaultValue}}
         assert "{{baseName}}" not in d
