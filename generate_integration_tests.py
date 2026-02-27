@@ -166,6 +166,9 @@ def _gen_integration(endpoints: list[dict[str, str]]) -> str:
         f"{_GENERATED}\n"
         '"""\n'
         "\n"
+        "import pytest\n"
+        "\n"
+        "from openapi_client.exceptions import ApiException\n"
         "from tests.conftest import requires_credentials"
     )
 
@@ -196,21 +199,41 @@ def _gen_integration(endpoints: list[dict[str, str]]) -> str:
             "@requires_credentials\n"
             f'class {ep["test_class"]}:\n'
             f"    def test_{w}_returns_list(self, client):\n"
-            f"        result = client.{w}(limit=5)\n"
+            f"        try:\n"
+            f"            result = client.{w}(limit=5)\n"
+            f"        except ApiException as e:\n"
+            f"            if e.status == 500:\n"
+            f'                pytest.skip(f"Server error: {{e.reason}}")\n'
+            f"            raise\n"
             "        assert isinstance(result, list)\n"
             "\n"
             f"    def test_{w}_pagination(self, client):\n"
-            f"        page1 = client.{w}(first=0, limit=2)\n"
-            f"        page2 = client.{w}(first=2, limit=2)\n"
+            f"        try:\n"
+            f"            page1 = client.{w}(first=0, limit=2)\n"
+            f"            page2 = client.{w}(first=2, limit=2)\n"
+            f"        except ApiException as e:\n"
+            f"            if e.status == 500:\n"
+            f'                pytest.skip(f"Server error: {{e.reason}}")\n'
+            f"            raise\n"
             "        assert isinstance(page1, list)\n"
             "        assert isinstance(page2, list)\n"
             "        if len(page1) == 2 and len(page2) > 0:\n"
             "            assert page1 != page2\n"
             "\n"
             f"    def test_{w}_paginate_all(self, client):\n"
-            f"        all_results = client.{w}(paginate_all=True)\n"
+            f"        try:\n"
+            f"            all_results = client.{w}(paginate_all=True)\n"
+            f"        except ApiException as e:\n"
+            f"            if e.status == 500:\n"
+            f'                pytest.skip(f"Server error: {{e.reason}}")\n'
+            f"            raise\n"
+            f"        try:\n"
+            f"            single_page = client.{w}(limit=50)\n"
+            f"        except ApiException as e:\n"
+            f"            if e.status == 500:\n"
+            f'                pytest.skip(f"Server error: {{e.reason}}")\n'
+            f"            raise\n"
             "        assert isinstance(all_results, list)\n"
-            f"        single_page = client.{w}(limit=50)\n"
             "        assert len(all_results) >= len(single_page)"
         )
 
