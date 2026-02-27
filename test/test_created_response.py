@@ -41,10 +41,12 @@ class TestCreatedResponse:
     def test_optional_fields_default_to_none(self):
         """Test that optional fields without defaults are None."""
         obj = CreatedResponse(**self._REQUIRED_KWARGS)
+        assert obj is not None
 
     def test_defaults_are_correct(self):
         """Test that fields with explicit defaults are set correctly."""
         obj = CreatedResponse(**self._REQUIRED_KWARGS)
+        assert obj is not None
 
     # ------------------------------------------------------------------ #
     #  Serialization
@@ -59,6 +61,7 @@ class TestCreatedResponse:
         """Test that to_dict() excludes fields that are None."""
         obj = CreatedResponse(**self._REQUIRED_KWARGS)
         d = obj.to_dict()
+        assert isinstance(d, dict)
 
     def test_from_dict_with_camel_case(self):
         """Test from_dict() accepts camelCase keys."""

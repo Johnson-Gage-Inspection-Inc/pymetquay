@@ -69,6 +69,7 @@ class TestCustomerInstrumentRequest:
     def test_defaults_are_correct(self):
         """Test that fields with explicit defaults are set correctly."""
         obj = CustomerInstrumentRequest(**self._REQUIRED_KWARGS)
+        assert obj is not None
 
     # ------------------------------------------------------------------ #
     #  Serialization
