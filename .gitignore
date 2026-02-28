@@ -76,3 +76,6 @@ tmpclaude-*-cwd
 
 # Temporary spec fetch
 .fetched-spec.json
+
+# Temporary documents
+docs/tmp/
