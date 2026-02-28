@@ -47,5 +47,8 @@ setup(
     long_description="""\
     Enterprise CRUD API for managing Metquay calibration management system entities. Provides complete CRUD operations for customers, instrument categories, customer instruments, and works.  ## Authentication Flow 1. Call &#x60;/authenticate&#x60; with your access/secret keys 2. Receive Bearer token (valid for 15 minutes) 3. Include token in &#x60;Authorization: Bearer {token}&#x60; header for all subsequent requests 4. Re-authenticate when token expires  ## Rate Limiting - **100 requests per minute** per API client - Exceeding limit returns 429 Too Many Requests - Contact support for rate limit increases  ## Idempotency - PUT and DELETE operations are idempotent (safe to retry) - POST operations are NOT idempotent (retry may create duplicates)  ## Pagination - List endpoints support pagination via &#x60;first&#x60; and &#x60;limit&#x60; query parameters - &#x60;first&#x60;: Starting index (default: 0, minimum: 0) - &#x60;limit&#x60;: Number of records to return (default: 50)  ## Workspace Feature - &#x60;workspaceCode&#x60; is optional and only required if the workspace feature is enabled for your organization - If workspace feature is not enabled, omit this parameter
     """,  # noqa: E501
-    package_data={"openapi_client": ["py.typed"]},
+    package_data={  # type: ignore[arg-type]  # setuptools stubs _DictLike vs dict
+        "openapi_client": ["py.typed"],
+        "pymetquay": ["py.typed"],
+    },
 )
