@@ -578,11 +578,14 @@ class Configuration:
         for variable_name, variable in server.get("variables", {}).items():
             used_value = variables.get(variable_name, variable["default_value"])
 
-            if "enum_values" in variable and used_value not in variable["enum_values"]:
+            if (
+                variable.get("enum_values")
+                and used_value not in variable["enum_values"]
+            ):
                 raise ValueError(
                     "The variable `{0}` in the host URL has invalid value "
                     "{1}. Must be {2}.".format(
-                        variable_name, variables[variable_name], variable["enum_values"]
+                        variable_name, used_value, variable["enum_values"]
                     )
                 )
 
