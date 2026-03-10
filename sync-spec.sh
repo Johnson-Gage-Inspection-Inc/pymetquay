@@ -44,6 +44,7 @@ if [ ! -f "$UPSTREAM" ]; then
     echo "✓ Created $UPSTREAM"
 elif diff -q "$FETCHED" "$UPSTREAM" > /dev/null 2>&1; then
     echo "✓ No upstream changes since last fetch."
+    exit 0
 else
     UPSTREAM_CHANGED=true
     echo "⚠ Upstream spec has changed!"
